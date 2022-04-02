@@ -24,6 +24,12 @@ class Slack:
         # initialize nodes
         self.node_Vr_Slack = None
         self.node_Vi_Slack = None
+        
+        self.Bus = Bus
+        self.Vset = Vset
+        self.ang = ang
+        self.Pinit = Pinit
+        self.Qinit = Qinit
 
     def assign_nodes(self):
         """Assign the additional slack bus nodes for a slack bus.

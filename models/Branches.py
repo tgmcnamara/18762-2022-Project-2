@@ -33,3 +33,14 @@ class Branches:
         # You will need to implement the remainder of the __init__ function yourself.
         # You should also add some other class functions you deem necessary for stamping,
         # initializing, and processing results.
+        
+        self.from_bus = from_bus
+        self.to_bus = to_bus
+        self.r = r
+        self.x = x
+        self.b = b
+        self.status = status
+        self.rateA = rateA
+        self.rateB = rateB
+        self.rateC = rateC
+        

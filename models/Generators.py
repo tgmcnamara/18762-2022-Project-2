@@ -31,6 +31,7 @@ class Generators:
             Qmax (float): maximum reactive power
             Qmin (float): minimum reactive power
             Pmax (float): maximum active power
+            
             Pmin (float): minimum active power
             Qinit (float): the initial amount of reactive power that the generator is supplying or absorbing.
             RemoteBus (int): the remote bus that the generator is controlling
@@ -40,6 +41,20 @@ class Generators:
 
         self.id = self._ids.__next__()
 
+        print("Bus:{}P:{}Vset:{}Qmax:{}Qmin:{}Pmax:{}\n Pmin:{}Qinit:{}RemoteBus:{}RMPCT:{}gen_type:{}".format(
+            Bus, P, Vset, Qmax, Qmin, Pmax, Pmin, Qinit, RemoteBus, RMPCT, gen_type))
         # You will need to implement the remainder of the __init__ function yourself.
         # You should also add some other class functions you deem necessary for stamping,
         # initializing, and processing results.
+        self.Bus = Bus
+        self.P = P
+        self.Vset = Vset
+        self.Qmax = Qmax
+        self.Qmin = Qmin
+        self.Pmax = Pmax
+        self.Pmin = Pmin
+        self.Qinit = Qinit
+        self.RemoteBus = RemoteBus
+        self.RMPCT = RMPCT
+        self.gen_type = gen_type
+        

@@ -3,7 +3,8 @@ from scripts.PowerFlow import PowerFlow
 from scripts.process_results import process_results
 from scripts.initialize import initialize
 from models.Buses import Buses
-
+import numpy as np
+import time
 
 def solve(TESTCASE, SETTINGS):
     """Run the power flow solver.
@@ -36,6 +37,7 @@ def solve(TESTCASE, SETTINGS):
     max_iters = SETTINGS['Max Iters']  # maximum NR iterations
     enable_limiting = SETTINGS['Limiting']  # enable/disable voltage and reactive power limiting
 
+
     # # # Assign System Nodes Bus by Bus # # #
     # We can use these nodes to have predetermined node number for every node in our Y matrix and J vector.
     for ele in bus:
@@ -46,13 +48,34 @@ def solve(TESTCASE, SETTINGS):
         ele.assign_nodes()
 
     # # # Initialize Solution Vector - V and Q values # # #
+    
+    # debugging
+    print("bus:{}\nslack:{}\ngenerator:{}".format(bus,slack,generator))
+    time.sleep(10)
+    print("transformer:{}\nbranch:{}\nshunt:{}\nload:{}".format(transformer,branch,shunt,load))
+    time.sleep(10)
+    
+    for g in generator:
+        print("g:{}\n{}".format(g,vars(g)))
+
+    for s in slack:
+        print("s:{}\n{}".format(s,vars(s)))
+        
+    for l in load:
+        print("l:{}\n{}".format(l,vars(l)))
+        
+    for b in bus:
+        print("b:{}\n{}".format(b,vars(b)))     
+        
+    for br in branch:
+        print("br:{}\n{}".format(br,vars(br)))  
 
     # determine the size of the Y matrix by looking at the total number of nodes in the system
     size_Y = Buses._node_index.__next__()
 
     # TODO: PART 1, STEP 1 - Complete the function to initialize your solution vector v_init.
-    v_init = None  # create a solution vector filled with zeros of size_Y
-    v_init = initialize()
+    v_init =  np.zeros(size_Y)# create a solution vector filled with zeros of size_Y
+    v_init = initialize() # find the initial conditions
 
     # # # Run Power Flow # # #
     powerflow = PowerFlow(case_name, tol, max_iters, enable_limiting)
@@ -69,3 +92,5 @@ def solve(TESTCASE, SETTINGS):
     #  and anything else of interest) and find the voltage profile (maximum and minimum voltages in the case).
     #  You can decide which arguments to pass to this function yourself.
     process_results()
+    print("---")
+    print("size Y:{}".format(size_Y))

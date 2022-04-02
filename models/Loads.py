@@ -33,3 +33,13 @@ class Loads:
         # You will need to implement the remainder of the __init__ function yourself.
         # You should also add some other class functions you deem necessary for stamping,
         # initializing, and processing results.
+
+        self.Bus = Bus
+        self.P = P
+        self.Q = Q
+        self.IP = IP
+        self.IQ = IQ
+        self.ZP = ZP
+        self.ZQ = ZQ
+        self.area = area
+        self.status = status
