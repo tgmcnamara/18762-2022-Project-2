@@ -25,9 +25,8 @@ class Slack:
         self.ang = ang * np.pi / 180
         self.pinit = Pinit/100
         self.qinit = Qinit/100
-        # initialize nodes
-        self.node_vr_slack = self.vset * np.cos(self.ang)
-        self.node_vi_slack = self.vset * np.sin(self.ang)
+        self.vrset = self.vset * np.cos(self.ang)
+        self.viset = self.vset * np.sin(self.ang)
 
     def assign_nodes(self):
         """Assign the additional slack bus nodes for a slack bus.
@@ -35,8 +34,8 @@ class Slack:
         Returns:
             None
         """
-        self.node_P_Slack = Buses._node_index.__next__()
-        self.node_Q_Slack = Buses._node_index.__next__()
+        self.node_Ir_Slack = Buses._node_index.__next__()
+        self.node_Ii_Slack = Buses._node_index.__next__()
 
 
     

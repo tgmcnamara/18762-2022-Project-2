@@ -60,9 +60,7 @@ def solve(TESTCASE, SETTINGS):
     # TODO: PART 1, STEP 2 - Complete the PowerFlow class and build your run_powerflow function to solve Equivalent
     #  Circuit Formulation powerflow. The function will return a final solution vector v. Remove run_pf and the if
     #  condition once you've finished building your solver.
-    run_pf = False
-    if run_pf:
-        v = powerflow.run_powerflow(v_init, bus, slack, generator, transformer, branch, shunt, load)
+    v = powerflow.run_powerflow(v_init, bus, slack, generator, transformer, branch, shunt, load)
 
     # # # Process Results # # #
     # TODO: PART 1, STEP 3 - Write a process_results function to compute the relevant results (voltages, powers,
