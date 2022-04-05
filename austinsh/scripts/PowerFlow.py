@@ -1,5 +1,8 @@
 import numpy as np
-
+from models.Buses import Buses
+from models.Generators import Generators
+from models.Loads import Loads
+from scipy import sparse
 
 class PowerFlow:
 
@@ -25,20 +28,115 @@ class PowerFlow:
         self.max_iters = max_iters
         self.enable_limiting = enable_limiting
 
-    def solve(self):
-        pass
+    def solve(y_matrix, j_matrix):
+        v = sparse.linalg.spsolve(y_matrix, j_matrix)
+        return v
 
     def apply_limiting(self):
         pass
 
-    def check_error(self):
-        pass
+    def check_error(self, difference):
+        """Returns the number of variables outside their accepted tolerance."""
+        if_error = difference > self.tol
+        if_error = if_error.astype(int)
+        num_of_error = int(np.sum(if_error))
+        return num_of_error
 
-    def stamp_linear(self):
-        pass
+    # # # Stamp Linear Power Grid Elements into Y matrix # # #
+    #  This function should call the stamp_linear function of each linear element and return an updated Y matrix.
 
-    def stamp_nonlinear(self):
-        pass
+    def stamp_linear(branches, size):
+        i_linear = []
+        j_linear = []
+        linear_value = []
+        for ele in branches:
+            vr_i = Buses.node_Vr(ele.from_bus)
+            vi_i = Buses.node_Vi(ele.from_bus)
+            vr_j = Buses.node_Vr(ele.to_bus)
+            vi_j = Buses.node_Vi(ele.to_bus)
+            stamps = [
+                [vr_i, vr_i, ele.conductance], [vr_i, vr_j, -ele.conductance], [vr_j, vr_j, ele.conductance],
+                [vr_j, vr_i, -ele.conductance], 
+                [vi_i, vi_i, ele.conductance], [vi_i, vi_j, -ele.conductance], [vi_j, vi_j, ele.conductance],
+                [vi_j, vi_i, -ele.conductance],
+                [vr_i, vi_i, ele.se_coeff], [vr_i, vi_j, -ele.se_coeff], [vr_j, vi_j, ele.se_coeff],
+                [vr_j, vi_i, -ele.se_coeff], 
+                [vi_i, vr_i, ele.se_coeff], [vi_i, vr_j, -ele.se_coeff], [vi_j, vr_j, ele.se_coeff],
+                [vi_j, vr_i, -ele.se_coeff],
+                [vr_i, vi_i, ele.sh_coeff], [vr_j, vi_j, ele.sh_coeff], [vi_i, vr_i, -ele.sh_coeff],
+                [vi_j, vr_j, -ele.sh_coeff]
+            ]
+            for indicies in stamps:
+                i, j, value = indicies
+                i_linear.append(i)
+                j_linear.append(j)
+                linear_value.append(value)
+        y_matrix = sparse.coo_matrix((linear_value, (i_linear, j_linear)), shape = (size, size)).tocsr()
+        return y_matrix
+
+    def stamp_nonlinear(generators, loads, pre_sol):
+        i_nonlinear = []
+        j_nonlinear = []
+        nonlinear_value = []
+        j_row = []
+        j_column = []
+        j_value = []
+        for ele in generators:
+            vr = Buses.node_Vr(ele.bus)
+            vi = Buses.node_Vi(ele.bus)
+            q = Buses.node_Q(ele.bus)
+            IR_by_Q, IR_by_VR, IR_by_VI, II_by_Q, II_by_VR, II_by_VI, VR_by_Q, VI_by_Q = \
+                Generators.pv_derivative(ele, pre_sol)
+            y_stamps = [
+                [vr, vr, IR_by_VR], [vr, vi, IR_by_VI], [vr, q, IR_by_Q],
+                [vi, vi, II_by_VI], [vi, vr, II_by_VR], [vi, q, II_by_Q],
+                [q, vr, VR_by_Q], [q, vi, VI_by_Q]
+            ]
+            j_VR, j_VI, j_Q = Generators.pv_history(
+                ele, pre_sol, IR_by_Q, IR_by_VR, IR_by_VI, II_by_Q, II_by_VR, II_by_VI
+                )
+            j_stamps = [
+                [vr, 0, j_VR], [vi, 0, j_VI], [q, 0, j_Q]
+            ]
+            for indicies in y_stamps:
+                i, j, value = indicies
+                i_nonlinear.append(i)
+                j_nonlinear.append(j)
+                nonlinear_value.append(value)
+            for index in j_stamps:
+                i, j, value = index
+                j_row.append(i)
+                j_column.append(j)
+                j_value.append(value)
+        for elem in loads:
+            vr = Buses.node_Vr(elem.bus)
+            vi = Buses.node_Vi(elem.bus)
+            IR_by_VR, IR_by_VI, II_by_VR, II_by_VI = Loads.pq_derivative(elem, pre_sol)
+            y_stamps = [
+                [vr, vr, IR_by_VR], [vr, vi, IR_by_VI],
+                [vi, vi, II_by_VI], [vi, vi, II_by_VR]
+            ]
+            j_VR, j_VI = Loads.pq_history(
+                elem, pre_sol, IR_by_VR, IR_by_VI, II_by_VR, II_by_VI
+                )
+            j_stamps = [
+                [vr, 0, j_VR]
+                [vi, 0, j_VI]
+            ]
+            for indicies in y_stamps:
+                i, j, value = indicies
+                i_nonlinear.append(i)
+                j_nonlinear.append(j)
+                nonlinear_value.append(value)
+            for index in j_stamps:
+                i, j, value = index
+                j_row.append(i)
+                j_column.append(j)
+                j_value.append(value)
+        size = len(pre_sol)
+        y_matrix = sparse.coo_matrix((nonlinear_value, (i_nonlinear, j_nonlinear)), shape = (size,size)).tocsr()
+        j_matrix = sparse.coo_matrix((j_value, (j_row, j_column)), shape = (size, 1)).tocsr()
+        return y_matrix, j_matrix
 
     def run_powerflow(self,
                       v_init,
@@ -70,28 +168,23 @@ class PowerFlow:
         v = np.copy(v_init)
         v_sol = np.copy(v)
 
-        # # # Stamp Linear Power Grid Elements into Y matrix # # #
-        # TODO: PART 1, STEP 2.1 - Complete the stamp_linear function which stamps all linear power grid elements.
-        #  This function should call the stamp_linear function of each linear element and return an updated Y matrix.
-        #  You need to decide the input arguments and return values.
-        def stamp_linear():
-            pass
-
         # # # Initialize While Loop (NR) Variables # # #
 
-        err_max = 1  # maximum error at the current NR iteration
+        err_measure = 1  # maximum error at the current NR iteration
         tol = self.tol  # chosen NR tolerance
         NR_count = 0  # current NR iteration
 
         # # # Begin Solving Via NR # # #
         # TODO: PART 1, STEP 2.3 - Complete the NR While Loop
-        while err_max > tol:
+        while err_measure > tol:
 
             # # # Stamp Nonlinear Power Grid Elements into Y matrix # # #
             # TODO: PART 1, STEP 2.4 - Complete the stamp_nonlinear function which stamps all nonlinear power grid
             #  elements. This function should call the stamp_nonlinear function of each nonlinear element and return
             #  an updated Y matrix. You need to decide the input arguments and return values.
-            self.stamp_nonlinear()
+
+            y_n_sparse, j_n_sparse = self.stamp_nonlinear(generator, load, v_init)
+            y_l_sparse, j_l_sparse = self.stamp_linear(branch)
 
             # # # Solve The System # # #
             # TODO: PART 1, STEP 2.5 - Complete the solve function which solves system of equations Yv = J. The
@@ -108,7 +201,7 @@ class PowerFlow:
             # TODO: PART 2, STEP 1 - Develop the apply_limiting function which implements voltage and reactive power
             #  limiting. Also, complete the else condition. Do not complete this step until you've finished Part 1.
             #  You need to decide the input arguments and return values.
-            if self.enable_limiting and err_max > tol:
+            if self.enable_limiting and err_measure > tol:
                 self.apply_limiting()
 
         return v

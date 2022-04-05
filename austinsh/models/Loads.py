@@ -1,6 +1,6 @@
 from __future__ import division
 from itertools import count
-
+from models.Buses import Buses
 from numpy import array_equal
 
 
@@ -37,24 +37,22 @@ class Loads:
         self.area = area
         self.status = status
 
-    def pq_derivative(PreviousSolution, load):
-        
-        pass
-        # real_V = PreviousSolution[]
-        # imag_V = PreviousSolution[]
-        # real_I_by_real_V = ((load.p*(imag_V**2 - real_V**2) - 2 * load.q * real_V * imag_V) /
-        #                     (real_V**2 + imag_V**2)**2)
-        # real_I_by_imag_V = ((load.q*(real_V**2 - imag_V**2) - 2 * load.p * real_V * imag_V) /
-        #                     (real_V**2 + imag_V**2)**2)
-        # imag_I_by_real_V = real_I_by_imag_V
-        # imag_I_by_imag_V = -real_I_by_real_V
-        # return real_I_by_real_V, real_I_by_imag_V, imag_I_by_real_V, imag_I_by_imag_V
+    def pq_derivative(self, PreviousSolution):
+        real_V = PreviousSolution[Buses.node_Vr(self.bus)]
+        imag_V = PreviousSolution[Buses.node_Vi(self.bus)]
+        real_I_by_real_V = ((self.p*(imag_V**2 - real_V**2) - 2 * self.q * real_V * imag_V) /
+                            (real_V**2 + imag_V**2)**2)
+        real_I_by_imag_V = ((self.q*(real_V**2 - imag_V**2) - 2 * self.p * real_V * imag_V) /
+                            (real_V**2 + imag_V**2)**2)
+        imag_I_by_real_V = real_I_by_imag_V
+        imag_I_by_imag_V = -real_I_by_real_V
+        return real_I_by_real_V, real_I_by_imag_V, imag_I_by_real_V, imag_I_by_imag_V
 
-    # def pq_history(PreviousSolution, IR_by_VR, IR_by_VI, II_by_VR, II_by_VI):
-    #     real_I = PreviousSolution[]
-    #     imag_I = PreviousSolution[]
-    #     real_V = PreviousSolution[]
-    #     imag_V = PreviousSolution[]
-    #     j_real_stamp = real_I - IR_by_VR * real_V - IR_by_VI * imag_V
-    #     j_imag_stamp = imag_I - II_by_VR * real_V - II_by_VI * imag_V
-    #     return j_real_stamp, j_imag_stamp
+    def pq_history(self, PreviousSolution, IR_by_VR, IR_by_VI, II_by_VR, II_by_VI):
+        real_V = PreviousSolution[Buses.node_Vr(self.bus)]
+        imag_V = PreviousSolution[Buses.node_Vi(self.bus)]
+        real_I = (self.p * real_V + self.q * imag_V) / (real_V**2 + imag_V**2)
+        imag_I = (self.p * real_V - self.q * imag_V) / (real_V**2 + imag_V**2)
+        j_real_stamp = - (real_I - IR_by_VR * real_V - IR_by_VI * imag_V)
+        j_imag_stamp = - (imag_I - II_by_VR * real_V - II_by_VI * imag_V)
+        return j_real_stamp, j_imag_stamp

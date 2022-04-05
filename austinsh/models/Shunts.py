@@ -37,7 +37,16 @@ class Shunts:
             Bstep (list): the admittance increase for each step in Nstep as MVar at unity voltage
         """
         self.id = self._ids.__next__()
-
-        # You will need to implement the remainder of the __init__ function yourself.
-        # You should also add some other class functions you deem necessary for stamping,
-        # initializing, and processing results.
+        self.bus = Bus
+        self.g_mw = G_MW
+        self.b_mvar = B_MVAR
+        self.shunt_type = shunt_type
+        self.vhi = Vhi
+        self.vlo = Vlo
+        self.bmax = Bmax
+        self.bmin = Bmin
+        self.binit = Binit
+        self.controlbus = controlBus
+        self.flag_control_shunt_bus = flag_control_shunt_bus
+        self.nsteps = Nsteps
+        self.bstep = Bstep

@@ -29,7 +29,15 @@ class Branches:
             rateC (float): The 3rd rating of the line.
         """
         self.id = self._ids.__next__()
-
-        # You will need to implement the remainder of the __init__ function yourself.
-        # You should also add some other class functions you deem necessary for stamping,
-        # initializing, and processing results.
+        self.from_bus = from_bus
+        self.to_bus = to_bus
+        self.r = r
+        self.x = x
+        self.b = b
+        self.status = status
+        self.rate_a = rateA
+        self.rate_b = rateB
+        self.rate_c = rateC
+        self.sh_coeff = -self.b/2
+        self.conductance = self.r / (self.r**2 + self.x**2)
+        self.se_coeff = self.x / (self.r**2 + self.x**2)

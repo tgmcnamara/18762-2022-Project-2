@@ -1,6 +1,6 @@
 from __future__ import division
 from itertools import count
-
+from models.Buses import Buses
 from more_itertools import bucket
 from scripts.global_vars import global_vars
 
@@ -53,28 +53,30 @@ class Generators:
         self.rmpct = RMPCT
         self.gen_type = gen_type
         
-    # def pv_derivative(PreviousSolution, generator):
-    #     real_V = PreviousSolution[]
-    #     imag_V = PreviousSolution[]
-    #     q_gen = PreviousSolution[]
-    #     real_I_by_q = -imag_V / (real_V**2 + imag_V**2)
-    #     real_I_by_real_V = - ((generator.p*(imag_V**2 - real_V**2) - 2 * q_gen * real_V * imag_V) /
-    #                         (real_V**2 + imag_V**2)**2)
-    #     real_I_by_imag_V = - ((q_gen*(real_V**2 - imag_V**2) - 2 * generator.p * real_V * imag_V) /
-    #                         (real_V**2 + imag_V**2)**2)
-    #     imag_I_by_q = -real_I_by_q * real_V / imag_V
-    #     imag_I_by_real_V = -real_I_by_imag_V
-    #     imag_I_by_imag_V = real_I_by_real_V
-    #     return real_I_by_q, real_I_by_real_V, real_I_by_imag_V, imag_I_by_q, imag_I_by_real_V, imag_I_by_imag_V
+    def pv_derivative(self, PreviousSolution):
+        real_V = PreviousSolution[Buses.node_Vr(self.bus)]
+        imag_V = PreviousSolution[Buses.node_Vi(self.bus)]
+        q_gen = PreviousSolution[Buses.node_Q(self.bus)]
+        real_I_by_q = -imag_V / (real_V**2 + imag_V**2)
+        real_I_by_real_V = - ((self.p*(imag_V**2 - real_V**2) - 2 * q_gen * real_V * imag_V) /
+                            (real_V**2 + imag_V**2)**2)
+        real_I_by_imag_V = - ((q_gen*(real_V**2 - imag_V**2) - 2 * self.p * real_V * imag_V) /
+                            (real_V**2 + imag_V**2)**2)
+        imag_I_by_q = -real_I_by_q * real_V / imag_V
+        imag_I_by_real_V = real_I_by_imag_V
+        imag_I_by_imag_V = - real_I_by_real_V
+        real_V_by_q = 2*real_V
+        imag_V_by_q = 2*imag_V
+        return real_I_by_q, real_I_by_real_V, real_I_by_imag_V, imag_I_by_q, imag_I_by_real_V, \
+                imag_I_by_imag_V, real_V_by_q, imag_V_by_q
 
-    # def pv_history(PreviousSolution, IR_by_Q, IR_by_VR, IR_by_VI, II_by_Q, II_by_VR, II_by_VI):
-    #     real_I = PreviousSolution[]
-    #     imag_I = PreviousSolution[]
-    #     q_gen = PreviousSolution[]
-    #     real_V = PreviousSolution[]
-    #     imag_V = PreviousSolution[]
-    #     j_real_stamp = real_I - IR_by_Q * q_gen - IR_by_VR * real_V - IR_by_VI * imag_V
-    #     j_imag_stamp = imag_I - II_by_Q * q_gen - II_by_VR * real_V - II_by_VI * imag_V
-    #     return j_real_stamp, j_imag_stamp
-
-
+    def pv_history(self, PreviousSolution, IR_by_Q, IR_by_VR, IR_by_VI, II_by_Q, II_by_VR, II_by_VI):
+        real_V = PreviousSolution[Buses.node_Vr(self.bus)]
+        imag_V = PreviousSolution[Buses.node_Vi(self.bus)]
+        q_gen = PreviousSolution[Buses.node_Q(self.bus)]
+        real_I = (-self.p * real_V - q_gen * imag_V) / (real_V**2 + imag_V**2)
+        imag_I = (-self.p * real_V + q_gen * imag_V) / (real_V**2 + imag_V**2)
+        j_real_stamp = - (real_I - IR_by_Q * q_gen - IR_by_VR * real_V - IR_by_VI * imag_V)
+        j_imag_stamp = - (imag_I - II_by_Q * q_gen - II_by_VR * real_V - II_by_VI * imag_V)
+        j_q_stamp = self.vset**2 + real_V**2 + imag_V**2
+        return j_real_stamp, j_imag_stamp, j_q_stamp
