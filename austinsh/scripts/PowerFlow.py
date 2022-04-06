@@ -66,8 +66,8 @@ class PowerFlow:
                 [vi_j, vi_i, -ele.conductance],
                 [vr_i, vi_i, ele.se_coeff], [vr_i, vi_j, -ele.se_coeff], [vr_j, vi_j, ele.se_coeff],
                 [vr_j, vi_i, -ele.se_coeff], 
-                [vi_i, vr_i, ele.se_coeff], [vi_i, vr_j, -ele.se_coeff], [vi_j, vr_j, ele.se_coeff],
-                [vi_j, vr_i, -ele.se_coeff],
+                [vi_i, vr_i, -ele.se_coeff], [vi_i, vr_j, ele.se_coeff], [vi_j, vr_j, -ele.se_coeff],
+                [vi_j, vr_i, ele.se_coeff],
                 [vr_i, vi_i, ele.sh_coeff], [vr_j, vi_j, ele.sh_coeff], [vi_i, vr_i, -ele.sh_coeff],
                 [vi_j, vr_j, -ele.sh_coeff]
             ]
