@@ -4,6 +4,7 @@ from models.Buses import Buses
 from models.Generators import Generators
 from models.Loads import Loads
 from scipy import sparse
+from scipy.sparse.linalg import spsolve
 
 class PowerFlow:
 
@@ -29,8 +30,8 @@ class PowerFlow:
         self.max_iters = max_iters
         self.enable_limiting = enable_limiting
 
-    def solve(y_matrix, j_matrix):
-        v = sparse.linalg.spsolve(y_matrix, j_matrix)
+    def solve(self, y_matrix, j_matrix):
+        v = spsolve(y_matrix, j_matrix)
         return v
 
     def apply_limiting(self):
@@ -46,7 +47,7 @@ class PowerFlow:
     # # # Stamp Linear Power Grid Elements into Y matrix # # #
     #  This function should call the stamp_linear function of each linear element and return an updated Y matrix.
 
-    def stamp_linear(branches, slack, size):
+    def stamp_linear(self, branches, slack, size):
         i_linear = []
         j_linear = []
         linear_value = []
@@ -54,10 +55,10 @@ class PowerFlow:
         j_column = []
         j_value = []
         for ele in branches:
-            vr_i = Buses.node_Vr(ele.from_bus)
-            vi_i = Buses.node_Vi(ele.from_bus)
-            vr_j = Buses.node_Vr(ele.to_bus)
-            vi_j = Buses.node_Vi(ele.to_bus)
+            vr_i = Buses.bus_key_[str(ele.from_bus) + "_vr"]
+            vi_i = Buses.bus_key_[str(ele.from_bus) + "_vi"]
+            vr_j = Buses.bus_key_[str(ele.to_bus) + "_vr"]
+            vi_j = Buses.bus_key_[str(ele.to_bus) + "_vi"]
             y_stamps = [
                 [vr_i, vr_i, ele.conductance], [vr_i, vr_j, -ele.conductance], [vr_j, vr_j, ele.conductance],
                 [vr_j, vr_i, -ele.conductance], 
@@ -76,8 +77,8 @@ class PowerFlow:
                 j_linear.append(j)
                 linear_value.append(value)
         for elem in slack:
-            vr = Buses.node_Vr(elem.bus)
-            vi = Buses.node_Vi(elem.bus)
+            vr = Buses.bus_key_[str(elem.bus) + "_vr"]
+            vi = Buses.bus_key_[str(elem.bus) + "_vi"]
             ir = elem.node_Ir_Slack
             ii = elem.node_Ii_Slack
             y_stamps = [
@@ -102,7 +103,7 @@ class PowerFlow:
         j_vector = sparse.coo_matrix((j_value, (j_row, j_column)), shape = (size, 1)).tocsr()
         return y_matrix, j_vector
 
-    def stamp_nonlinear(generators, loads, pre_sol):
+    def stamp_nonlinear(self, generators, loads, pre_sol):
         i_nonlinear = []
         j_nonlinear = []
         nonlinear_value = []
@@ -110,9 +111,9 @@ class PowerFlow:
         j_column = []
         j_value = []
         for ele in generators:
-            vr = Buses.node_Vr(ele.bus)
-            vi = Buses.node_Vi(ele.bus)
-            q = Buses.node_Q(ele.bus)
+            vr = Buses.bus_key_[str(ele.bus) + "_vr"]
+            vi = Buses.bus_key_[str(ele.bus) + "_vi"]
+            q = Buses.bus_key_[str(ele.bus) + "_q"]
             IR_by_Q, IR_by_VR, IR_by_VI, II_by_Q, II_by_VR, II_by_VI, VR_by_Q, VI_by_Q = \
                 Generators.pv_derivative(ele, pre_sol)
             y_stamps = [
@@ -124,7 +125,9 @@ class PowerFlow:
                 ele, pre_sol, IR_by_Q, IR_by_VR, IR_by_VI, II_by_Q, II_by_VR, II_by_VI
                 )
             j_stamps = [
-                [vr, 0, j_VR], [vi, 0, j_VI], [q, 0, j_Q]
+                [vr, 0, j_VR], 
+                [vi, 0, j_VI], 
+                [q, 0, j_Q]
             ]
             for indicies in y_stamps:
                 i, j, value = indicies
@@ -137,12 +140,12 @@ class PowerFlow:
                 j_column.append(j)
                 j_value.append(value)
         for elem in loads:
-            vr = Buses.node_Vr(elem.bus)
-            vi = Buses.node_Vi(elem.bus)
+            vr = Buses.bus_key_[str(elem.bus) + "_vr"]
+            vi = Buses.bus_key_[str(elem.bus) + "_vi"]
             IR_by_VR, IR_by_VI, II_by_VR, II_by_VI = Loads.pq_derivative(elem, pre_sol)
             y_stamps = [
                 [vr, vr, IR_by_VR], [vr, vi, IR_by_VI],
-                [vi, vi, II_by_VI], [vi, vi, II_by_VR]
+                [vi, vr, II_by_VR], [vi, vi, II_by_VI]
             ]
             j_VR, j_VI = Loads.pq_history(
                 elem, pre_sol, IR_by_VR, IR_by_VI, II_by_VR, II_by_VI
@@ -211,8 +214,8 @@ class PowerFlow:
             #  elements. This function should call the stamp_nonlinear function of each nonlinear element and return
             #  an updated Y matrix. You need to decide the input arguments and return values.
 
-            state_variables = len(v_init)
-            y_n_sparse, j_n_sparse = self.stamp_nonlinear(generator, load, v_init)
+            state_variables = len(v)
+            y_n_sparse, j_n_sparse = self.stamp_nonlinear(generator, load, v)
             y_l_sparse, j_l_sparse = self.stamp_linear(branch, slack, state_variables)
 
             y_matrix = y_n_sparse + y_l_sparse
@@ -231,6 +234,7 @@ class PowerFlow:
             iteration_difference = abs(v_new - v)
             err_measure = self.check_error(iteration_difference)
             v = v_new
+
             # # # Compute The Error at the current NR iteration # # #
             # TODO: PART 2, STEP 1 - Develop the apply_limiting function which implements voltage and reactive power
             #  limiting. Also, complete the else condition. Do not complete this step until you've finished Part 1.

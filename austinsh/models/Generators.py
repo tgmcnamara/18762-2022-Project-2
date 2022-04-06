@@ -54,15 +54,15 @@ class Generators:
         self.gen_type = gen_type
         
     def pv_derivative(self, PreviousSolution):
-        real_V = PreviousSolution[Buses.node_Vr(self.bus)]
-        imag_V = PreviousSolution[Buses.node_Vi(self.bus)]
-        q_gen = PreviousSolution[Buses.node_Q(self.bus)]
+        real_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
+        imag_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
+        q_gen = PreviousSolution[Buses.bus_key_[str(self.bus) + "_q"]]
         real_I_by_q = -imag_V / (real_V**2 + imag_V**2)
         real_I_by_real_V = - ((self.p*(imag_V**2 - real_V**2) - 2 * q_gen * real_V * imag_V) /
                             (real_V**2 + imag_V**2)**2)
         real_I_by_imag_V = - ((q_gen*(real_V**2 - imag_V**2) - 2 * self.p * real_V * imag_V) /
                             (real_V**2 + imag_V**2)**2)
-        imag_I_by_q = -real_I_by_q * real_V / imag_V
+        imag_I_by_q = real_V / (real_V**2 + imag_V**2)
         imag_I_by_real_V = real_I_by_imag_V
         imag_I_by_imag_V = - real_I_by_real_V
         real_V_by_q = 2*real_V
@@ -71,9 +71,9 @@ class Generators:
                 imag_I_by_imag_V, real_V_by_q, imag_V_by_q
 
     def pv_history(self, PreviousSolution, IR_by_Q, IR_by_VR, IR_by_VI, II_by_Q, II_by_VR, II_by_VI):
-        real_V = PreviousSolution[Buses.node_Vr(self.bus)]
-        imag_V = PreviousSolution[Buses.node_Vi(self.bus)]
-        q_gen = PreviousSolution[Buses.node_Q(self.bus)]
+        real_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
+        imag_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
+        q_gen = PreviousSolution[Buses.bus_key_[str(self.bus) + "_q"]]
         real_I = (-self.p * real_V - q_gen * imag_V) / (real_V**2 + imag_V**2)
         imag_I = (-self.p * real_V + q_gen * imag_V) / (real_V**2 + imag_V**2)
         j_real_stamp = - (real_I - IR_by_Q * q_gen - IR_by_VR * real_V - IR_by_VI * imag_V)

@@ -38,8 +38,8 @@ class Loads:
         self.status = status
 
     def pq_derivative(self, PreviousSolution):
-        real_V = PreviousSolution[Buses.node_Vr(self.bus)]
-        imag_V = PreviousSolution[Buses.node_Vi(self.bus)]
+        real_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
+        imag_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
         real_I_by_real_V = ((self.p*(imag_V**2 - real_V**2) - 2 * self.q * real_V * imag_V) /
                             (real_V**2 + imag_V**2)**2)
         real_I_by_imag_V = ((self.q*(real_V**2 - imag_V**2) - 2 * self.p * real_V * imag_V) /
@@ -49,8 +49,8 @@ class Loads:
         return real_I_by_real_V, real_I_by_imag_V, imag_I_by_real_V, imag_I_by_imag_V
 
     def pq_history(self, PreviousSolution, IR_by_VR, IR_by_VI, II_by_VR, II_by_VI):
-        real_V = PreviousSolution[Buses.node_Vr(self.bus)]
-        imag_V = PreviousSolution[Buses.node_Vi(self.bus)]
+        real_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
+        imag_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
         real_I = (self.p * real_V + self.q * imag_V) / (real_V**2 + imag_V**2)
         imag_I = (self.p * real_V - self.q * imag_V) / (real_V**2 + imag_V**2)
         j_real_stamp = - (real_I - IR_by_VR * real_V - IR_by_VI * imag_V)

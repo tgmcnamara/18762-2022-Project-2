@@ -56,9 +56,14 @@ class Buses:
         if self.Type == 1 or self.Type == 3:
             self.node_Vr = self._node_index.__next__()
             self.node_Vi = self._node_index.__next__()
+            self.bus_key_[str(self.Bus) + "_vr"] = self.node_Vr
+            self.bus_key_[str(self.Bus) + "_vi"] = self.node_Vi
 
         # If PV Bus
         elif self.Type == 2:
             self.node_Vr = self._node_index.__next__()
             self.node_Vi = self._node_index.__next__()
             self.node_Q = self._node_index.__next__()
+            self.bus_key_[str(self.Bus) + "_vr"] = self.node_Vr
+            self.bus_key_[str(self.Bus) + "_vi"] = self.node_Vi
+            self.bus_key_[str(self.Bus) + "_q"] = self.node_Q

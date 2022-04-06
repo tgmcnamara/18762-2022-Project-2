@@ -27,6 +27,8 @@ class Slack:
         self.qinit = Qinit/100
         self.vrset = self.vset * np.cos(self.ang)
         self.viset = self.vset * np.sin(self.ang)
+        self.ir_init = (self.vrset*self.pinit + self.viset*self.qinit)/(self.vset**2)
+        self.ii_init = (self.viset*self.pinit - self.vrset*self.qinit)/(self.vset**2)
 
     def assign_nodes(self):
         """Assign the additional slack bus nodes for a slack bus.
