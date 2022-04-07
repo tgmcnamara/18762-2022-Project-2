@@ -32,6 +32,16 @@ class Transformers:
         """
         self.id = self._ids.__next__()
 
+        self.from_bus = from_bus
+        self.to_bus = to_bus
+        self.r = r
+        self.x = x
+        self.status = status
+        self.tr = tr
+        self.ang = ang
+        self.Gsh_raw = Gsh_raw
+        self.Bsh_raw = Bsh_raw
+        self.rating = rating
         # You will need to implement the remainder of the __init__ function yourself.
         # You should also add some other class functions you deem necessary for stamping,
         # initializing, and processing results.

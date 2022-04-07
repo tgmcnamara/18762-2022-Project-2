@@ -1,6 +1,6 @@
 from __future__ import division
 from itertools import count
-
+from models.Buses import Buses
 
 class Branches:
     _ids = count(0)
@@ -37,10 +37,51 @@ class Branches:
         self.from_bus = from_bus
         self.to_bus = to_bus
         self.r = r
+        self.g = 1/self.r
         self.x = x
         self.b = b
         self.status = status
         self.rateA = rateA
         self.rateB = rateB
         self.rateC = rateC
+        
+        
+    def diagonal_stamp(self, Y, J, from_node, to_node):
+        Y[from_node][from_node] += self.g
+        Y[from_node][to_node] += -self.b
+        Y[to_node][from_node] += self.b
+        Y[to_node][to_node] += self.g
+        return Y, J
+    
+    def off_diagonal_stamp(self,Y,J,a,b,c,d):
+        # nodes a,b,c,d make a square as so:
+        # [a][c] | [a][d]
+        # ---------------
+        # [b][c] | [b][d]
+        Y[a][c] += -self.g
+        Y[a][d] += self.b
+        Y[b][c] += -self.b
+        Y[b][d] += -self.g
+        return Y, J
+    
+    def stamp(self, Y, J):
+        # diagonal stamp blocks
+        Y, J = self.diagonal_stamp(Y,J,Buses.bus_map[self.from_bus].node_Vr,
+                                   Buses.bus_map[self.from_bus].node_Vi)
+        Y, J = self.diagonal_stamp(Y,J,Buses.bus_map[self.to_bus].node_Vr,
+                                   Buses.bus_map[self.to_bus].node_Vi)
+        # off-diagonal stamp blocks
+        # top right
+        Y, J = self.off_diagonal_stamp(Y,J,Buses.bus_map[self.from_bus].node_Vr,
+                                   Buses.bus_map[self.from_bus].node_Vr,
+                                   Buses.bus_map[self.to_bus].node_Vr,
+                                   Buses.bus_map[self.to_bus].node_Vi)
+        # bottom left
+        Y, J = self.off_diagonal_stamp(Y,J,Buses.bus_map[self.to_bus].node_Vr,
+                                   Buses.bus_map[self.to_bus].node_Vr,
+                                   Buses.bus_map[self.from_bus].node_Vr,
+                                   Buses.bus_map[self.from_bus].node_Vi)    
+        
+        return Y,J    
+        
         

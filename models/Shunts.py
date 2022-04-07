@@ -41,6 +41,3 @@ class Shunts:
         # You will need to implement the remainder of the __init__ function yourself.
         # You should also add some other class functions you deem necessary for stamping,
         # initializing, and processing results.
-
-    def __repr__(self):
-        return "Shunts {} id{}".format(str(self), self.id)

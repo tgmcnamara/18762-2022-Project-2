@@ -1,4 +1,5 @@
 %STARTUP
+% check out this link for more help https://matpower.org/about/get-started/
 % CHOOSE TO ADD TO THE PATH
 %% add MATPOWER paths
 addpath( ...

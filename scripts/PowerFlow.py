@@ -1,4 +1,5 @@
 import numpy as np
+from models.Buses import Buses
 
 
 class PowerFlow:
@@ -24,7 +25,23 @@ class PowerFlow:
         self.tol = tol
         self.max_iters = max_iters
         self.enable_limiting = enable_limiting
+        
+        # added variables
+        self.Y = None
+        self.J = None
+        
+        self.bus_map = {} # tuple mapping from integer number to bus
+        self.generator_dict = {} # mapping generators to solution indices (generator, indices vr,vi,q)
+        self.load_dict = {} # mapping load to solution indices
+        self.slack_dict = {} # mapping slack to solution indices
 
+        # need a log of the partials for calculations
+        # load: real: Irl/Vrl, Irl/Vil PV bus imag: Iil/Vrl, Iil/Vil
+        # PV bus:        
+        self.partial_log = None
+        
+        self.solution_v = None
+        
     def solve(self):
         pass
 
@@ -34,12 +51,34 @@ class PowerFlow:
     def check_error(self):
         pass
 
-    def stamp_linear(self):
-        pass
+    def get_hist_vars(self):
+        """
+        returns historical variables V r,g hist, V i,g hist and V e,q hist
+        using self.last_v a record of the last solution
+        """
+        
+        
+    def stamp_linear(self, slack, branch):
+        for s in slack:
+            self.Y, self.J = s.stamp(self.Y, self.J)
+        for b in branch:
+            self.Y, self.J = b.stamp(self.Y, self.J)
+            
 
-    def stamp_nonlinear(self):
-        pass
-
+    def stamp_nonlinear(self, load, generator, prev_v):
+        # loads
+        for l in load:
+            self.Y, self.J = l.stamp(self.Y, self.J, prev_v)
+        print("after load", self.J)
+        # generators
+        for g in generator:
+            self.Y, self.J = g.stamp(self.Y, self.J, prev_v)
+        print("after generator", self.J)
+    
+    def reset_stamps(self, size):
+        self.Y = np.zeros((size,size))
+        self.J = np.zeros((size, 1))
+        
     def run_powerflow(self,
                       v_init,
                       bus,
@@ -65,32 +104,51 @@ class PowerFlow:
             v(np.array): The final solution vector.
 
         """
+        # create bus mapping
+        for b in bus:
+            self.bus_map[b.Bus] = b
 
+        step = 0
+        
         # # # Copy v_init into the Solution Vectors used during NR, v, and the final solution vector v_sol # # #
         v = np.copy(v_init)
         v_sol = np.copy(v)
+        v_size = np.size(v_sol)
+        
+        self.solution_v = np.copy(v)
+
+        # initializing the MNA matrix/vectors
+        self.reset_stamps(v_size)
+        
 
         # # # Stamp Linear Power Grid Elements into Y matrix # # #
         # TODO: PART 1, STEP 2.1 - Complete the stamp_linear function which stamps all linear power grid elements.
         #  This function should call the stamp_linear function of each linear element and return an updated Y matrix.
         #  You need to decide the input arguments and return values.
-        self.stamp_linear()
-
+        self.stamp_linear(slack,branch)
+        
+        # linear stamps which can be used as the starting point in NR iterations
+        linear_stamps = (self.Y, self.J)
+        
         # # # Initialize While Loop (NR) Variables # # #
         # TODO: PART 1, STEP 2.2 - Initialize the NR variables
-        err_max = None  # maximum error at the current NR iteration
-        tol = None  # chosen NR tolerance
+        err_max = np.inf  # maximum error at the current NR iteration
+        tol = self.tol # chosen NR tolerance
         NR_count = None  # current NR iteration
 
         # # # Begin Solving Via NR # # #
         # TODO: PART 1, STEP 2.3 - Complete the NR While Loop
         while err_max > tol:
-
+            self.Y, self.J = linear_stamps
+            
+            # debugging
+            err_max = 0
+            
             # # # Stamp Nonlinear Power Grid Elements into Y matrix # # #
             # TODO: PART 1, STEP 2.4 - Complete the stamp_nonlinear function which stamps all nonlinear power grid
             #  elements. This function should call the stamp_nonlinear function of each nonlinear element and return
             #  an updated Y matrix. You need to decide the input arguments and return values.
-            self.stamp_nonlinear()
+            self.stamp_nonlinear(load, generator, v_sol)
 
             # # # Solve The System # # #
             # TODO: PART 1, STEP 2.5 - Complete the solve function which solves system of equations Yv = J. The

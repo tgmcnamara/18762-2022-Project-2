@@ -37,8 +37,26 @@ class Slack:
         Returns:
             None
         """
+        # these are the nodes for the current ammeter rows
         self.node_Vr_Slack = Buses._node_index.__next__()
         self.node_Vi_Slack = Buses._node_index.__next__()
-
-    # You should also add some other class functions you deem necessary for stamping,
-    # initializing, and processing results.
+    
+    
+    def stamp(self,Y,J):
+        v_node_r = self.node_Vr_Slack
+        v_node_i = self.node_Vi_Slack
+        i_node_r = Buses.bus_map[self.Bus].node_Vr
+        i_node_i = Buses.bus_map[self.Bus].node_Vi
+        
+        # independent voltage source stamping
+        Y[i_node_r][v_node_r] = 1
+        Y[i_node_i][v_node_i] = 1
+        J[i_node_r] = self.Vset
+        J[i_node_i] = 0
+        #
+        Y[v_node_r][i_node_r] = 1
+        Y[v_node_i][i_node_i] = 1
+        J[v_node_r] = 0
+        J[v_node_i] = 0
+        
+        return Y,J  
