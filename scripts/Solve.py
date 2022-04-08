@@ -95,11 +95,9 @@ def solve(TESTCASE, SETTINGS):
     # TODO: PART 1, STEP 3 - Write a process_results function to compute the relevant results (voltages, powers,
     #  and anything else of interest) and find the voltage profile (maximum and minimum voltages in the case).
     #  You can decide which arguments to pass to this function yourself.
-    process_results()
-    print("---")
-    print("size Y:{}".format(size_Y))
+    process_results(v,bus)
     
+    print("---")
     print("Y matrix", powerflow.Y)
     print("J vector", powerflow.J)
-    print("bus key", Buses.bus_key_)
-    print("all bus key", Buses.all_bus_key_)
+    print("v", v)

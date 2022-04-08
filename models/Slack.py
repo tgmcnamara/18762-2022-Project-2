@@ -43,10 +43,10 @@ class Slack:
     
     
     def stamp(self,Y,J):
-        v_node_r = self.node_Vr_Slack
-        v_node_i = self.node_Vi_Slack
-        i_node_r = Buses.bus_map[self.Bus].node_Vr
-        i_node_i = Buses.bus_map[self.Bus].node_Vi
+        i_node_r = self.node_Vr_Slack
+        i_node_i = self.node_Vi_Slack
+        v_node_r = Buses.bus_map[self.Bus].node_Vr
+        v_node_i = Buses.bus_map[self.Bus].node_Vi
         
         # independent voltage source stamping
         Y[i_node_r][v_node_r] = 1

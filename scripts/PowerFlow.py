@@ -212,11 +212,11 @@ class PowerFlow:
             #  limiting. Also, complete the else condition. Do not complete this step until you've finished Part 1.
             #  You need to decide the input arguments and return values.
             if self.enable_limiting and err_max > tol:
-                self.apply_limiting(v_sol, prev_v_sol)
+                self.apply_limiting(v_sol, prev_v_sol,[*generator,*slack,*load])
             else:
                 pass
 
             prev_v_sol = v_sol            
             NR_count = NR_count + 1
 
-        return v
+        return v_sol

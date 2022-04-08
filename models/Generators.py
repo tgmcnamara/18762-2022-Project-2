@@ -140,10 +140,11 @@ class Generators:
             self.dIig_dQg(prev_v[v_node_r],prev_v[v_node_i]) * prev_v[q_node]
         
         # V set row 
-        v_eq_hist = self.Vset**2 - 2 * prev_v[v_node_r]**2 - 2 * prev_v[v_node_i]**2   
+        # used to be multiples of 2 below
+        v_eq_hist = self.Vset**2 - 1* prev_v[v_node_r]**2 - 1* prev_v[v_node_i]**2   
         Y[q_node][v_node_r] += 2 * prev_v[v_node_r]
         Y[q_node][v_node_i] += 2 * prev_v[v_node_i]
-        J[q_node] = v_eq_hist 
+        J[q_node] -= v_eq_hist 
         
             
         return Y, J
