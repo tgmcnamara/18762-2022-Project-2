@@ -1,4 +1,5 @@
 
+from difflib import IS_CHARACTER_JUNK
 import numpy as np
 from models.Buses import Buses
 from models.Generators import Generators
@@ -47,7 +48,7 @@ class PowerFlow:
     # # # Stamp Linear Power Grid Elements into Y matrix # # #
     #  This function should call the stamp_linear function of each linear element and return an updated Y matrix.
 
-    def stamp_linear(self, branches, slack, size):
+    def stamp_linear(self, branches, slack, transformer, shunts, size):
         i_linear = []
         j_linear = []
         linear_value = []
@@ -99,6 +100,40 @@ class PowerFlow:
                 j_row.append(i)
                 j_column.append(j)
                 j_value.append(value)
+        for elem in transformer:
+            vr_i = Buses.bus_key_[str(elem.from_bus) + "_vr"]
+            vi_i = Buses.bus_key_[str(elem.from_bus) + "_vi"]
+            vr_j = Buses.bus_key_[str(elem.to_bus) + "_vr"]
+            vi_j = Buses.bus_key_[str(elem.to_bus) + "_vi"]
+            ir_i = elem.node_Ir_i
+            ii_i = elem.node_Ii_i
+            ir_j = elem.node_Ir_j
+            ii_j = elem.node_Ii_j
+            y_stamps = [
+                [ir_i, vr_i, 1], [ir_i, vr_j, -elem.cos], [ir_i, vi_j, elem.sin],
+                [vr_i, ir_i, 1],
+                [ii_i, vi_i, 1], [ii_i, vr_j, -elem.sin], [ii_i, vi_j, -elem.cos],
+                [vi_i, ii_i, 1],
+                [vr_j, ir_i, -elem.cos], [vr_i, ir_i, 1], [ir_i, vr_i, 1],
+                [vr_j, ii_i, -elem.sin], [vi_i, ii_i, 1], [ii_i, vi_i, 1],
+                [vi_j, ir_i, elem.sin], [vr_i, ir_i, 1], [ir_i, vr_i, 1],
+                [vi_j, ii_i, -elem.cos], [vi_i, ii_i, 1], [ii_i, vi_i, 1],
+                [vr_j, vr_j, elem.conductance], [vr_j, ir_j, -elem.conductance], [vr_j, ii_j, -elem.se_coeff],
+                [vr_j, vi_j, elem.se_coeff],
+                [ir_j, ir_j, elem.conductance], [ir_j, vr_j, -elem.conductance], [ir_j, ii_j, elem.se_coeff],
+                [ir_j, vi_j, -elem.se_coeff],
+                [vi_j, vi_j, elem.conductance], [vi_j, ii_j, -elem.conductance], [vi_j, vr_j, -elem.se_coeff],
+                [vi_j, ir_j, elem.se_coeff],
+                [ii_j, ii_j, elem.conductance], [ii_j, vi_j, -elem.conductance], [ii_j, ir_j, -elem.se_coeff],
+                [ii_j, vr_j, elem.se_coeff]
+            ]
+            for indicies in y_stamps:
+                i, j, value = indicies
+                i_linear.append(i)
+                j_linear.append(j)
+                linear_value.append(value)
+        for elem in shunts:
+            pass
         y_matrix = sparse.coo_matrix((linear_value, (i_linear, j_linear)), shape = (size, size)).tocsr()
         j_vector = sparse.coo_matrix((j_value, (j_row, j_column)), shape = (size, 1)).tocsr()
         return y_matrix, j_vector
@@ -216,7 +251,7 @@ class PowerFlow:
 
             state_variables = len(v)
             y_n_sparse, j_n_sparse = self.stamp_nonlinear(generator, load, v)
-            y_l_sparse, j_l_sparse = self.stamp_linear(branch, slack, state_variables)
+            y_l_sparse, j_l_sparse = self.stamp_linear(branch, slack, transformer, shunt, state_variables)
 
             y_matrix = y_n_sparse + y_l_sparse
             j_vector = j_n_sparse + j_l_sparse

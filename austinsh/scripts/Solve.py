@@ -44,6 +44,10 @@ def solve(TESTCASE, SETTINGS):
     # Assign any slack nodes
     for ele in slack:
         ele.assign_nodes()
+    
+    # Assign transformer nodes
+    for ele in transformer:
+        ele.assign_nodes()
 
     # # # Initialize Solution Vector - V and Q values # # #
 
@@ -51,7 +55,7 @@ def solve(TESTCASE, SETTINGS):
     size_Y = Buses._node_index.__next__()
 
     v_init = np.zeros(size_Y)
-    v_init = initialize(v_init, bus, generator, slack)
+    v_init = initialize(v_init, bus, generator, slack, load)
 
     # # # Run Power Flow # # #
     powerflow = PowerFlow(case_name, tol, max_iters, enable_limiting)

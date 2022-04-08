@@ -58,13 +58,13 @@ class Generators:
         imag_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
         q_gen = PreviousSolution[Buses.bus_key_[str(self.bus) + "_q"]]
         real_I_by_q = -imag_V / (real_V**2 + imag_V**2)
-        real_I_by_real_V = - ((self.p*(imag_V**2 - real_V**2) - 2 * q_gen * real_V * imag_V) /
+        real_I_by_real_V = ((self.p*(real_V**2 - imag_V**2) + 2 * q_gen * real_V * imag_V) /
                             (real_V**2 + imag_V**2)**2)
-        real_I_by_imag_V = - ((q_gen*(real_V**2 - imag_V**2) - 2 * self.p * real_V * imag_V) /
+        real_I_by_imag_V = ((q_gen*(imag_V**2 - real_V**2) + 2 * self.p * real_V * imag_V) /
                             (real_V**2 + imag_V**2)**2)
         imag_I_by_q = real_V / (real_V**2 + imag_V**2)
         imag_I_by_real_V = real_I_by_imag_V
-        imag_I_by_imag_V = - real_I_by_real_V
+        imag_I_by_imag_V = -real_I_by_real_V
         real_V_by_q = 2*real_V
         imag_V_by_q = 2*imag_V
         return real_I_by_q, real_I_by_real_V, real_I_by_imag_V, imag_I_by_q, imag_I_by_real_V, \
@@ -75,7 +75,7 @@ class Generators:
         imag_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
         q_gen = PreviousSolution[Buses.bus_key_[str(self.bus) + "_q"]]
         real_I = (-self.p * real_V - q_gen * imag_V) / (real_V**2 + imag_V**2)
-        imag_I = (-self.p * real_V + q_gen * imag_V) / (real_V**2 + imag_V**2)
+        imag_I = (-self.p * imag_V + q_gen * real_V) / (real_V**2 + imag_V**2)
         j_real_stamp = - (real_I - IR_by_Q * q_gen - IR_by_VR * real_V - IR_by_VI * imag_V)
         j_imag_stamp = - (imag_I - II_by_Q * q_gen - II_by_VR * real_V - II_by_VI * imag_V)
         j_q_stamp = self.vset**2 + real_V**2 + imag_V**2

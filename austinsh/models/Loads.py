@@ -52,7 +52,7 @@ class Loads:
         real_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
         imag_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
         real_I = (self.p * real_V + self.q * imag_V) / (real_V**2 + imag_V**2)
-        imag_I = (self.p * real_V - self.q * imag_V) / (real_V**2 + imag_V**2)
+        imag_I = (self.p * imag_V - self.q * real_V) / (real_V**2 + imag_V**2)
         j_real_stamp = - (real_I - IR_by_VR * real_V - IR_by_VI * imag_V)
         j_imag_stamp = - (imag_I - II_by_VR * real_V - II_by_VI * imag_V)
         return j_real_stamp, j_imag_stamp

@@ -1,4 +1,3 @@
-from __future__ import division
 from models.Buses import Buses
 import numpy as np
 
@@ -38,8 +37,3 @@ class Slack:
         """
         self.node_Ir_Slack = Buses._node_index.__next__()
         self.node_Ii_Slack = Buses._node_index.__next__()
-
-
-    
-    # You should also add some other class functions you deem necessary for stamping,
-    # initializing, and processing results.

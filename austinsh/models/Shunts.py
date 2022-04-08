@@ -40,12 +40,14 @@ class Shunts:
         self.bus = Bus
         self.g_mw = G_MW
         self.b_mvar = B_MVAR
+        self.g = self.g_mw/100
+        self.b = self.b_mvar/100
         self.shunt_type = shunt_type
         self.vhi = Vhi
         self.vlo = Vlo
-        self.bmax = Bmax
-        self.bmin = Bmin
-        self.binit = Binit
+        self.bmax = Bmax/100
+        self.bmin = Bmin/100
+        self.binit = Binit/100
         self.controlbus = controlBus
         self.flag_control_shunt_bus = flag_control_shunt_bus
         self.nsteps = Nsteps
