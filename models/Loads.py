@@ -2,9 +2,11 @@ from __future__ import division
 from itertools import count
 from models.Buses import Buses
 import math
+import scripts.global_vars as gv
 
 class Loads:
     _ids = count(0)
+    base = gv.global_vars.MVAbase
 
     def __init__(self,
                  Bus,
@@ -20,8 +22,8 @@ class Loads:
 
         Args:
             Bus (int): the bus where the load is located
-            P (float): the active power of a constant power (PQ) load.
-            Q (float): the reactive power of a constant power (PQ) load.
+            P (float): the active power of a constant power (PQ) load. [entered in MW]
+            Q (float): the reactive power of a constant power (PQ) load. [entered in Mvar]
             IP (float): the active power component of a constant current load.
             IQ (float): the reactive power component of a constant current load.
             ZP (float): the active power component of a constant admittance load.
@@ -36,8 +38,8 @@ class Loads:
         # initializing, and processing results.
 
         self.Bus = Bus
-        self.P = P
-        self.Q = Q
+        self.P = P / Loads.base
+        self.Q = Q / Loads.base
         self.IP = IP
         self.IQ = IQ
         self.ZP = ZP
@@ -93,12 +95,12 @@ class Loads:
         
         # historical values
         # Vrl
-        J[v_node_r] += self.Irl(prev_v[v_node_r],prev_v[v_node_i]) - \
+        J[v_node_r] -= self.Irl(prev_v[v_node_r],prev_v[v_node_i]) - \
             self.dIrl_dVrl(prev_v[v_node_r],prev_v[v_node_i]) * prev_v[v_node_r] -\
             self.dIrl_dVil(prev_v[v_node_r],prev_v[v_node_i]) * prev_v[v_node_i]
             
         # Vil
-        J[v_node_r] += self.Iil(prev_v[v_node_r],prev_v[v_node_i]) - \
+        J[v_node_r] -= self.Iil(prev_v[v_node_r],prev_v[v_node_i]) - \
             self.dIil_dVrl(prev_v[v_node_r],prev_v[v_node_i]) * prev_v[v_node_r] -\
             self.dIil_dVil(prev_v[v_node_r],prev_v[v_node_i]) * prev_v[v_node_i]
             

@@ -36,7 +36,7 @@ def solve(TESTCASE, SETTINGS):
     tol = SETTINGS['Tolerance']  # NR solver tolerance
     max_iters = SETTINGS['Max Iters']  # maximum NR iterations
     enable_limiting = SETTINGS['Limiting']  # enable/disable voltage and reactive power limiting
-
+    sparse = SETTINGS['Sparse']
 
     # # # Assign System Nodes Bus by Bus # # #
     # We can use these nodes to have predetermined node number for every node in our Y matrix and J vector.
@@ -84,7 +84,7 @@ def solve(TESTCASE, SETTINGS):
     v_init = np.array([1., 0., 1., 0., 1., 0., 1., 0., 0., 0., 0.])
 
     # # # Run Power Flow # # #
-    powerflow = PowerFlow(case_name, tol, max_iters, enable_limiting)
+    powerflow = PowerFlow(case_name, tol, max_iters, enable_limiting, sparse)
 
     # TODO: PART 1, STEP 2 - Complete the PowerFlow class and build your run_powerflow function to solve Equivalent
     #  Circuit Formulation powerflow. The function will return a final solution vector v. Remove run_pf and the if

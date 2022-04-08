@@ -1,6 +1,6 @@
 import numpy as np
 from models.Buses import Buses
-
+import scripts.sparse_matrices as spm
 
 class PowerFlow:
 
@@ -8,7 +8,8 @@ class PowerFlow:
                  case_name,
                  tol,
                  max_iters,
-                 enable_limiting):
+                 enable_limiting,
+                 sparse):
         """Initialize the PowerFlow instance.
 
         Args:
@@ -25,6 +26,7 @@ class PowerFlow:
         self.tol = tol
         self.max_iters = max_iters
         self.enable_limiting = enable_limiting
+        self.sparse = sparse
         
         # added variables
         self.Y = None
@@ -39,21 +41,48 @@ class PowerFlow:
         # load: real: Irl/Vrl, Irl/Vil PV bus imag: Iil/Vrl, Iil/Vil
         # PV bus:        
         self.partial_log = None
-        
         self.solution_v = None
+        
+        # voltage limiting
+        self.absolute_v_limit = 2.5
+        self.delta_limit = 0.1
         
     def solve(self, Y, J, init_v):
         y = np.round(np.matrix(Y).tolist(),2)
         print('\n'.join([''.join(['{:8}'.format(item) for item in row]) 
                          for row in y]))
-        print("values")
-        v_new = init_v - np.linalg.inv(Y) @ J
-        print("values: init_v:{}\nY:{}\nJ:{}\nv_new:{}".format(init_v,Y,J,v_new))
+        v_new = init_v - np.linalg.inv(Y) @ (Y @ init_v - J)
         # calculate information for determining residuals
         return v_new
 
-    def apply_limiting(self):
-        pass
+    def apply_limiting(self, v_sol, prev_v_sol, voltage_devices):
+        limit_vector = np.array(np.size(v_sol) * [self.delta_limit])
+        # calculate delta v as well as its magnitude and sign
+        delta_v = v_sol - prev_v_sol
+        sign_delta_v = np.sign(delta_v)
+        norm_delta_v = np.sqrt(delta_v * delta_v)
+        # calculate the voltage limited value of  v
+        new_delta_v = (sign_delta * np.minimum(norm_delta_v,limit_vector)) + prev_v_sol
+        
+        # perform absolute limits on all values
+        new_delta_v = np.maximum(new_delta_v, np.size(v_sol) * [self.absolute_v_limit] )
+        new_delta_v = np.minimum(new_delta_v, np.size(v_sol) * [self.absolute_v_limit] )
+        
+        # for all values that are NOT voltages replace new_delta_v values with v_sol values
+        voltage_indices = {}
+        # collect all the indices of v_sol that are voltages
+        for device in voltage_devices:
+            voltage_devices[Buses.bus_map[device.Bus].node_Vr] = 1
+            voltage_devices[Buses.bus_map[device.Bus].node_Vi] = 1
+        # subtract sets to find the indices that do not correspond to voltages
+        voltage_indices = set(voltage_indices)
+        all_indices = set(np.arange(0,np.size(v_sol)+1,1))
+        non_voltage_indices = all_indices.difference(voltage_indices)
+        # recover old values for the non_voltage indices
+        for ind in non_voltage_indices:
+            new_delta_v[ind] = v_sol[ind]
+        
+        return new_delta_v    
 
     def check_error(self, Y, J, v_sol):
         err_vector = (Y @ v_sol) - J
@@ -85,8 +114,12 @@ class PowerFlow:
         print("after generator", self.J)
     
     def reset_stamps(self, size):
-        self.Y = np.zeros((size,size))
-        self.J = np.zeros(size)
+        if (self.sparse):
+            self.Y = spm.sparse_matrix()
+            self.J = spm.sparse_vector()
+        else:
+            self.Y = np.zeros((size,size))
+            self.J = np.zeros(size)
         
     def run_powerflow(self,
                       v_init,
@@ -164,6 +197,7 @@ class PowerFlow:
             # TODO: PART 1, STEP 2.5 - Complete the solve function which solves system of equations Yv = J. The
             #  function should return a new v_sol.
             #  You need to decide the input arguments and return values.
+            prev_v_sol = v_sol
             v_sol = self.solve(self.Y, self.J, v_sol)
 
             # # # Compute The Error at the current NR iteration # # #
@@ -178,10 +212,11 @@ class PowerFlow:
             #  limiting. Also, complete the else condition. Do not complete this step until you've finished Part 1.
             #  You need to decide the input arguments and return values.
             if self.enable_limiting and err_max > tol:
-                self.apply_limiting()
+                self.apply_limiting(v_sol, prev_v_sol)
             else:
                 pass
-            
+
+            prev_v_sol = v_sol            
             NR_count = NR_count + 1
 
         return v
