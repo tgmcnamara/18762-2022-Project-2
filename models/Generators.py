@@ -114,10 +114,15 @@ class Generators:
         q_node = Buses.bus_map[self.Bus].node_Q
         
         # conductance and VCVS
+        # Rg and Ig differentials
         Y[v_node_r][v_node_r] += self.dIrg_dVrg(prev_v[v_node_r],prev_v[v_node_i],prev_v[q_node])
         Y[v_node_r][v_node_i] += self.dIrg_dVig(prev_v[v_node_r],prev_v[v_node_i],prev_v[q_node])
         Y[v_node_i][v_node_i] += self.dIig_dVig(prev_v[v_node_r],prev_v[v_node_i],prev_v[q_node])
         Y[v_node_i][v_node_r] += self.dIig_dVrg(prev_v[v_node_r],prev_v[v_node_i],prev_v[q_node])
+        
+        # Qg differentials
+        Y[v_node_r][q_node] += self.dIrg_dQg(prev_v[v_node_r],prev_v[v_node_i])
+        Y[v_node_i][q_node] += self.dIig_dQg(prev_v[v_node_r],prev_v[v_node_i])
         
         # historical values
         # Vrl

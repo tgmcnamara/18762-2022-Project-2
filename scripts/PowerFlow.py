@@ -42,14 +42,23 @@ class PowerFlow:
         
         self.solution_v = None
         
-    def solve(self):
-        pass
+    def solve(self, Y, J, init_v):
+        y = np.round(np.matrix(Y).tolist(),2)
+        print('\n'.join([''.join(['{:8}'.format(item) for item in row]) 
+                         for row in y]))
+        print("values")
+        v_new = init_v - np.linalg.inv(Y) @ J
+        print("values: init_v:{}\nY:{}\nJ:{}\nv_new:{}".format(init_v,Y,J,v_new))
+        # calculate information for determining residuals
+        return v_new
 
     def apply_limiting(self):
         pass
 
-    def check_error(self):
-        pass
+    def check_error(self, Y, J, v_sol):
+        err_vector = (Y @ v_sol) - J
+        err_max = np.max(err_vector)
+        return err_max        
 
     def get_hist_vars(self):
         """
@@ -77,7 +86,7 @@ class PowerFlow:
     
     def reset_stamps(self, size):
         self.Y = np.zeros((size,size))
-        self.J = np.zeros((size, 1))
+        self.J = np.zeros(size)
         
     def run_powerflow(self,
                       v_init,
@@ -134,11 +143,12 @@ class PowerFlow:
         # TODO: PART 1, STEP 2.2 - Initialize the NR variables
         err_max = np.inf  # maximum error at the current NR iteration
         tol = self.tol # chosen NR tolerance
-        NR_count = None  # current NR iteration
+        NR_count = 0  # current NR iteration
 
         # # # Begin Solving Via NR # # #
         # TODO: PART 1, STEP 2.3 - Complete the NR While Loop
-        while err_max > tol:
+        while (err_max > tol and (NR_count < self.max_iters)):
+            print("NR iteration: {}".format(NR_count))
             self.Y, self.J = linear_stamps
             
             # debugging
@@ -154,12 +164,14 @@ class PowerFlow:
             # TODO: PART 1, STEP 2.5 - Complete the solve function which solves system of equations Yv = J. The
             #  function should return a new v_sol.
             #  You need to decide the input arguments and return values.
-            self.solve()
+            v_sol = self.solve(self.Y, self.J, v_sol)
 
             # # # Compute The Error at the current NR iteration # # #
             # TODO: PART 1, STEP 2.6 - Finish the check_error function which calculates the maximum error, err_max
             #  You need to decide the input arguments and return values.
-            self.check_error()
+            err_max = self.check_error(self.Y, self.J, v_sol)
+            print("max error at iteration:{}".format(err_max))
+            print("solution vector: {}".format(v_sol))
 
             # # # Compute The Error at the current NR iteration # # #
             # TODO: PART 2, STEP 1 - Develop the apply_limiting function which implements voltage and reactive power
@@ -169,5 +181,7 @@ class PowerFlow:
                 self.apply_limiting()
             else:
                 pass
+            
+            NR_count = NR_count + 1
 
         return v
