@@ -103,7 +103,7 @@ class Loads:
             self.dIrl_dVil(prev_v[v_node_r],prev_v[v_node_i]) * prev_v[v_node_i]
             
         # Vil
-        J[v_node_r] -= self.Iil(prev_v[v_node_r],prev_v[v_node_i]) - \
+        J[v_node_i] -= self.Iil(prev_v[v_node_r],prev_v[v_node_i]) - \
             self.dIil_dVrl(prev_v[v_node_r],prev_v[v_node_i]) * prev_v[v_node_r] -\
             self.dIil_dVil(prev_v[v_node_r],prev_v[v_node_i]) * prev_v[v_node_i]
             

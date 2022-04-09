@@ -49,10 +49,10 @@ class Branches:
         
         
     def diagonal_stamp(self, Y, J, from_node, to_node):
-        Y[from_node][from_node] += self.g
-        Y[from_node][to_node] += -self.b
-        Y[to_node][from_node] += self.b
-        Y[to_node][to_node] += self.g
+        Y[from_node][from_node] += self.G
+        Y[from_node][to_node] += -self.B
+        Y[to_node][from_node] += self.B
+        Y[to_node][to_node] += self.G
         return Y, J
     
     def off_diagonal_stamp(self,Y,J,a,b,c,d):
@@ -60,10 +60,10 @@ class Branches:
         # [a][c] | [a][d]
         # ---------------
         # [b][c] | [b][d]
-        Y[a][c] += -self.g
-        Y[a][d] += self.b
-        Y[b][c] += -self.b
-        Y[b][d] += -self.g
+        Y[a][c] += -self.G
+        Y[a][d] += self.B
+        Y[b][c] += -self.B
+        Y[b][d] += -self.G
         return Y, J
     
     def stamp(self, Y, J):
