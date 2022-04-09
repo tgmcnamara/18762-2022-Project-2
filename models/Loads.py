@@ -1,5 +1,7 @@
 from __future__ import division
 from itertools import count
+import numpy as np
+from scipy.sparse import csc_matrix
 
 
 class Loads:
@@ -29,7 +31,32 @@ class Loads:
             status (bool): indicates if the load is in-service or out-of-service.
         """
         self.id = Loads._ids.__next__()
+        self.P = P/100
+        self.Q = Q/100
+        self.Bus = Bus
+
 
         # You will need to implement the remainder of the __init__ function yourself.
         # You should also add some other class functions you deem necessary for stamping,
         # initializing, and processing results.
+        #
+    def stamp_nl(self, J, Vp, size, vr, vi):
+        low = Vp[vr]*Vp[vr] + Vp[vi]*Vp[vi]
+        hr = self.P*Vp[vr] + self.Q*Vp[vi]
+        hi = self.P*Vp[vi] - self.Q*Vp[vr]
+
+        drdr = (low*self.P - hr*2*Vp[vr])/(low*low)
+        drdi = (low*self.Q - hr*2*Vp[vi])/(low*low)
+
+        didr = (-low*self.Q - hi*2*Vp[vr])/(low*low)
+        didi = (low*self.P - hi*2*Vp[vi])/(low*low)
+
+        row = np.array([  vr,  vr,  vi,  vi])
+        col = np.array([  vr,  vi,  vr,  vi])
+        dat = np.array([drdr,drdi,didr,didi])
+
+        J[vr] += drdr*Vp[vr] + drdi*Vp[vi] - hr/low
+        J[vi] += didr*Vp[vr] + didi*Vp[vi] - hi/low
+
+        return csc_matrix((dat, (row, col)), shape=(size,size))
+

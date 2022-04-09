@@ -1,6 +1,7 @@
 from __future__ import division
 from itertools import count
 import numpy as np
+from scipy.sparse import csc_matrix
 
 
 class Buses:
@@ -29,10 +30,12 @@ class Buses:
 
         self.Bus = Bus
         self.Type = Type
+        self.Vm_init = Vm_init
+        self.Va_init = Va_init
 
         # initialize all nodes
-        self.node_Vr = None  # real voltage node at a bus
-        self.node_Vi = None  # imaginary voltage node at a bus
+        self.node_Vr = None # real voltage node at a bus
+        self.node_Vi = None # imaginary voltage node at a bus
         self.node_Q = None  # reactive power or voltage contstraint node at a bus
 
         # initialize the bus key
@@ -61,3 +64,28 @@ class Buses:
             self.node_Vr = self._node_index.__next__()
             self.node_Vi = self._node_index.__next__()
             self.node_Q = self._node_index.__next__()
+
+
+    def lin_stamp_control(self, J, size, slack, shunt):
+        Y = csc_matrix((size,size))
+        for ele in slack:
+            if(ele.Bus == self.Bus):
+                slacklin = ele.stamp_lin(J, size, self.node_Vr, self.node_Vi)
+                Y += slacklin
+        for ele in shunt:
+            if(ele.Bus == self.Bus):
+                shuntlin = ele.stamp_lin(size, self.node_Vr, self.node_Vi)
+                Y += shuntlin
+        return Y
+
+    def nl_stmp_cntrl(self, J, vp, gen, load, size):
+        Y = csc_matrix((size,size))
+        for ele in gen:
+            if(ele.Bus == self.Bus):
+                Y += ele.stamp_nl(J, vp, size, self.node_Vr, self.node_Vi, self.node_Q)
+        for ele in load:
+            if(ele.Bus == self.Bus):
+                Y += ele.stamp_nl(J, vp, size, self.node_Vr, self.node_Vi)
+        return Y
+
+
