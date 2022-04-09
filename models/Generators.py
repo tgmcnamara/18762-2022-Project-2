@@ -141,7 +141,7 @@ class Generators:
         
         # V set row 
         # used to be multiples of 2 below
-        v_eq_hist = self.Vset**2 - 1* prev_v[v_node_r]**2 - 1* prev_v[v_node_i]**2   
+        v_eq_hist = -self.Vset**2 - prev_v[v_node_r]**2 - prev_v[v_node_i]**2   
         Y[q_node][v_node_r] += 2 * prev_v[v_node_r]
         Y[q_node][v_node_i] += 2 * prev_v[v_node_i]
         J[q_node] -= v_eq_hist 

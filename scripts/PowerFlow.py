@@ -1,6 +1,9 @@
 import numpy as np
 from models.Buses import Buses
+import scipy
+import scipy.sparse as sp
 import scripts.sparse_matrices as spm
+import scripts.sparse_matrices as sm
 
 class PowerFlow:
 
@@ -9,7 +12,8 @@ class PowerFlow:
                  tol,
                  max_iters,
                  enable_limiting,
-                 sparse):
+                 sparse,
+                 size_y):
         """Initialize the PowerFlow instance.
 
         Args:
@@ -31,6 +35,7 @@ class PowerFlow:
         # added variables
         self.Y = None
         self.J = None
+        self.size_y = size_y
         
         self.bus_map = {} # tuple mapping from integer number to bus
         self.generator_dict = {} # mapping generators to solution indices (generator, indices vr,vi,q)
@@ -48,10 +53,23 @@ class PowerFlow:
         self.delta_limit = 0.1
         
     def solve(self, Y, J, init_v):
-        y = np.round(np.matrix(Y).tolist(),2)
-        print('\n'.join([''.join(['{:8}'.format(item) for item in row]) 
-                         for row in y]))
-        v_new = init_v - np.linalg.inv(Y) @ (Y @ init_v - J)
+        if (self.sparse == True):
+            print("Y", Y.to_dense())
+            print("Y items", Y.added_items)
+            print("J", J.to_dense())
+            print("J items", J.added_items)
+            print("v", init_v.to_dense())
+            print("v items", init_v.added_items)
+            
+            v_new = init_v - sp.linalg.inv(Y.sparse_matrix) @  \
+                    (Y.sparse_matrix @ init_v - J.sparse_matrix)
+            v_new = v_new.todense()
+        else:
+            rounded_y = np.round(np.matrix(Y).tolist(),2)
+            rounded_y = Y
+            print('\n'.join([''.join(['{:8}'.format(item) for item in row]) 
+                             for row in rounded_y]))
+            v_new = init_v - np.linalg.inv(Y) @ (Y @ init_v - J)
         # calculate information for determining residuals
         return v_new
 
@@ -94,7 +112,7 @@ class PowerFlow:
         returns historical variables V r,g hist, V i,g hist and V e,q hist
         using self.last_v a record of the last solution
         """
-        
+        pass
         
     def stamp_linear(self, slack, branch):
         for s in slack:
@@ -115,8 +133,8 @@ class PowerFlow:
     
     def reset_stamps(self, size):
         if (self.sparse):
-            self.Y = spm.sparse_matrix()
-            self.J = spm.sparse_vector()
+            self.Y = spm.sparse_matrix(size = size)
+            self.J = spm.sparse_vector(size = size)
         else:
             self.Y = np.zeros((size,size))
             self.J = np.zeros(size)
@@ -155,7 +173,9 @@ class PowerFlow:
         # # # Copy v_init into the Solution Vectors used during NR, v, and the final solution vector v_sol # # #
         v = np.copy(v_init)
         v_sol = np.copy(v)
-        v_size = np.size(v_sol)
+        if (self.sparse == True):
+            v_sol = sm.array_to_sparse(v_sol)
+        v_size = self.size_y
         
         self.solution_v = np.copy(v)
 
@@ -177,6 +197,11 @@ class PowerFlow:
         err_max = np.inf  # maximum error at the current NR iteration
         tol = self.tol # chosen NR tolerance
         NR_count = 0  # current NR iteration
+        
+        # resizing sparse matrix to avoid singularity
+        #if (sparse):
+        #    self.Y.sparse_matrix.resize((self.size_y, self.size_y))
+        #    self.J.sparse_matrix.resize((self.size_y, self.size_y))
 
         # # # Begin Solving Via NR # # #
         # TODO: PART 1, STEP 2.3 - Complete the NR While Loop
@@ -205,7 +230,7 @@ class PowerFlow:
             #  You need to decide the input arguments and return values.
             err_max = self.check_error(self.Y, self.J, v_sol)
             print("max error at iteration:{}".format(err_max))
-            print("solution vector: {}".format(v_sol))
+            #print("solution vector: {}".format(v_sol))
 
             # # # Compute The Error at the current NR iteration # # #
             # TODO: PART 2, STEP 1 - Develop the apply_limiting function which implements voltage and reactive power

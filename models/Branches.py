@@ -37,9 +37,11 @@ class Branches:
         self.from_bus = from_bus
         self.to_bus = to_bus
         self.r = r
-        self.g = 1/self.r
         self.x = x
-        self.b = b
+        self.b = 1/self.x
+        self.g = 1/self.r
+        self.G = self.r/(self.r**2 + self.x**2)
+        self.B = -self.x/(self.r**2 + self.x**2)
         self.status = status
         self.rateA = rateA
         self.rateB = rateB
@@ -68,17 +70,18 @@ class Branches:
         # diagonal stamp blocks
         Y, J = self.diagonal_stamp(Y,J,Buses.bus_map[self.from_bus].node_Vr,
                                    Buses.bus_map[self.from_bus].node_Vi)
+        
         Y, J = self.diagonal_stamp(Y,J,Buses.bus_map[self.to_bus].node_Vr,
                                    Buses.bus_map[self.to_bus].node_Vi)
         # off-diagonal stamp blocks
         # top right
         Y, J = self.off_diagonal_stamp(Y,J,Buses.bus_map[self.from_bus].node_Vr,
-                                   Buses.bus_map[self.from_bus].node_Vr,
+                                   Buses.bus_map[self.from_bus].node_Vi,
                                    Buses.bus_map[self.to_bus].node_Vr,
                                    Buses.bus_map[self.to_bus].node_Vi)
         # bottom left
         Y, J = self.off_diagonal_stamp(Y,J,Buses.bus_map[self.to_bus].node_Vr,
-                                   Buses.bus_map[self.to_bus].node_Vr,
+                                   Buses.bus_map[self.to_bus].node_Vi,
                                    Buses.bus_map[self.from_bus].node_Vr,
                                    Buses.bus_map[self.from_bus].node_Vi)    
         

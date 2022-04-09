@@ -3,6 +3,7 @@ from scripts.PowerFlow import PowerFlow
 from scripts.process_results import process_results
 from scripts.initialize import initialize
 from models.Buses import Buses
+import scripts.sparse_matrices as sm
 import numpy as np
 import time
 
@@ -80,11 +81,12 @@ def solve(TESTCASE, SETTINGS):
 
     # TODO: PART 1, STEP 1 - Complete the function to initialize your solution vector v_init.
     v_init =  np.zeros(size_Y)# create a solution vector filled with zeros of size_Y
-    #v_init = initialize() # find the initial conditions
-    v_init = np.array([1., 0., 1., 0., 1., 0., 1., 0., 0., 0., 0.])
+    v_init = initialize(size_Y, [*generator,*slack,*load]) # find the initial conditions
+    print("inital V", v_init)
+    #v_init = np.array([1., 0., 1., 0., 1., 0., 1., 0., 0., 0., 0.])
 
     # # # Run Power Flow # # #
-    powerflow = PowerFlow(case_name, tol, max_iters, enable_limiting, sparse)
+    powerflow = PowerFlow(case_name, tol, max_iters, enable_limiting, sparse, size_Y)
 
     # TODO: PART 1, STEP 2 - Complete the PowerFlow class and build your run_powerflow function to solve Equivalent
     #  Circuit Formulation powerflow. The function will return a final solution vector v. Remove run_pf and the if

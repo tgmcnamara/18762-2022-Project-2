@@ -4,7 +4,7 @@ import scipy.sparse.linalg
 from scipy.sparse import csr_matrix
 from scipy import sparse as sp
 import parse
-
+        
 class sparse_row():
     def __init__(self, master, row):
         self.master = master
@@ -17,6 +17,7 @@ class sparse_row():
         if (not "{},{}".format(self.row,idx) in self.master.added_items):
             self.master.added_items["{},{}".format(self.row,idx)] = 0 
         return self.master.added_items["{},{}".format(self.row,idx)]
+    
 
 class sparse_vector():
     def __init__(self, size = 100):
@@ -26,12 +27,15 @@ class sparse_vector():
         self.size = size
         self.added_items = {}
         self.sparse_matrix = csr_matrix((self.val, (self.row, np.array(np.size(self.row) * [0]))), 
-                                        shape = (self.size, self.size))
+                                        shape = (self.size,1))
     
     def __setitem__(self,idx,val):
         self.added_items[idx] = val
            
     def __getitem__(self,idx):
+        print("did this")
+        if (idx != self.added_items.keys()):
+            self.added_items[idx] = 0
         return self.added_items[idx]
         
     def set_element(self, i, val):
@@ -53,9 +57,10 @@ class sparse_vector():
             self.set_element(key,self.added_items[key])
         print("finished")
         self.sparse_matrix = csr_matrix((self.val, (self.row, np.array(np.size(self.row) * [0]))), 
-                                        shape = (self.size, self.size))
+                                        shape = (self.size,1))
         
     def to_dense(self):
+        self.generate_matrix_from_sparse()
         if (self.sparse_matrix == None):
             return np.zeros((size, size))
         else:
@@ -74,6 +79,10 @@ class sparse_matrix():
         
     def __getitem__(self,idx):
         return sparse_row(self,idx)
+        
+    def __repr__(self):
+        generate_matrix_from_sparse()
+        return self.sparse_matrix
         
     def set_element(self, i, j, val):
         self.row[self.index] = i
@@ -100,10 +109,19 @@ class sparse_matrix():
                                         shape = (self.size, self.size))
         
     def to_dense(self):
+        self.generate_matrix_from_sparse()
         if (self.sparse_matrix == None):
             return np.zeros((size, size))
         else:
             return self.sparse_matrix.todense()
+        
+def array_to_sparse(arr):
+    vector = sparse_vector()
+    size = np.size(arr)
+    print("sparse vector get item", vector[0])
+    for i in range(size):
+        vector[i] = arr[i]
+    return vector
         
 if __name__ == "__main__":
     print("np operators", dir(np.ones((2,2))))
@@ -114,7 +132,7 @@ if __name__ == "__main__":
     s[4][5] += 10
     s.generate_matrix_from_sparse()
     t[0] = 1
-    t[0] = 11
+    t[3] -= 11
     t.generate_matrix_from_sparse()
     print("t",t.sparse_matrix.getrow(0).toarray())
     t.generate_matrix_from_sparse()
