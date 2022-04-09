@@ -55,15 +55,16 @@ class PowerFlow:
     def solve(self, Y, J, init_v):
         if (self.sparse == True):
             print("Y", Y.to_dense())
-            print("Y items", Y.added_items)
             print("J", J.to_dense())
-            print("J items", J.added_items)
             print("v", init_v.to_dense())
-            print("v items", init_v.added_items)
             
-            v_new = init_v - sp.linalg.inv(Y.sparse_matrix) @  \
-                    (Y.sparse_matrix @ init_v - J.sparse_matrix)
-            v_new = v_new.todense()
+            v_new = init_v.sparse_matrix - sp.linalg.inv(Y.sparse_matrix) @  \
+                    (Y.sparse_matrix @ init_v.sparse_matrix - J.sparse_matrix)
+            # fit the matrix output of todense() to an 1-D array format
+            v_new = np.array(v_new.todense()).ravel()
+            print("v new:", v_new,"size",v_new.shape)
+            # need to fit the matrix output into an array format
+            return sm.sparse_vector(arr = v_new)
         else:
             rounded_y = np.round(np.matrix(Y).tolist(),2)
             rounded_y = Y
@@ -71,7 +72,7 @@ class PowerFlow:
                              for row in rounded_y]))
             v_new = init_v - np.linalg.inv(Y) @ (Y @ init_v - J)
         # calculate information for determining residuals
-        return v_new
+            return v_new
 
     def apply_limiting(self, v_sol, prev_v_sol, voltage_devices):
         limit_vector = np.array(np.size(v_sol) * [self.delta_limit])
@@ -103,9 +104,17 @@ class PowerFlow:
         return new_delta_v    
 
     def check_error(self, Y, J, v_sol):
-        err_vector = (Y @ v_sol) - J
-        err_max = np.max(err_vector)
-        return err_max        
+        if (self.sparse == True):
+            print("Y", Y.to_dense())
+            print("J", J.to_dense())
+            print("v", v_sol.to_dense())            
+            err_vector = (Y.sparse_matrix @ v_sol.sparse_matrix) - J.sparse_matrix
+            err_max = np.max(np.array(err_vector.todense()).ravel())
+            return err_max
+        else:
+            err_vector = (Y @ v_sol) - J
+            err_max = np.max(err_vector)
+            return err_max        
 
     def get_hist_vars(self):
         """
@@ -174,7 +183,7 @@ class PowerFlow:
         v = np.copy(v_init)
         v_sol = np.copy(v)
         if (self.sparse == True):
-            v_sol = sm.array_to_sparse(v_sol)
+            v_sol = sm.sparse_vector(arr = v_init)
         v_size = self.size_y
         
         self.solution_v = np.copy(v)

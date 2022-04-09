@@ -89,6 +89,7 @@ class Loads:
         
         # conductance and VCVS
         print("prev_v", prev_v)
+        print("prev_v dense",prev_v.to_dense())
         print("prev_v[0]", prev_v[0])
         print("prev_v[v_node_r]", prev_v[v_node_r])
         Y[v_node_r][v_node_r] += self.dIrl_dVrl(prev_v[v_node_r],prev_v[v_node_i])

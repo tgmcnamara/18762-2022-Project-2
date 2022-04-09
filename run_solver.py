@@ -13,7 +13,7 @@ casename = 'testcases/GS_4_prior_solution.RAW'
 settings = {
     "Tolerance": 1E-05,
     "Max Iters": 1000,
-    "Sparse": False,
+    "Sparse": True,
     "Limiting":  False
 }
 

@@ -20,7 +20,7 @@ class sparse_row():
     
 
 class sparse_vector():
-    def __init__(self, size = 100):
+    def __init__(self, size = 100, arr = None):
         self.row = np.zeros(size)
         self.val = np.zeros(size)
         self.index = 0
@@ -28,13 +28,18 @@ class sparse_vector():
         self.added_items = {}
         self.sparse_matrix = csr_matrix((self.val, (self.row, np.array(np.size(self.row) * [0]))), 
                                         shape = (self.size,1))
+        
+        # constructing from an array
+        if (not (arr is None)):
+            self.size = len(arr)
+            for i in range(self.size):
+                self[i] = arr[i]
     
     def __setitem__(self,idx,val):
         self.added_items[idx] = val
            
     def __getitem__(self,idx):
-        print("did this")
-        if (idx != self.added_items.keys()):
+        if (idx not in self.added_items.keys()):
             self.added_items[idx] = 0
         return self.added_items[idx]
         
@@ -49,7 +54,6 @@ class sparse_vector():
         
     def widen_vectors(self, amount):
         self.row = np.hstack((self.row, amount * [0]))
-        self.col = np.hstack((self.col, amount * [0]))
         self.val = np.hstack((self.val, amount * [0]))
             
     def generate_matrix_from_sparse(self):
@@ -115,13 +119,6 @@ class sparse_matrix():
         else:
             return self.sparse_matrix.todense()
         
-def array_to_sparse(arr):
-    vector = sparse_vector()
-    size = np.size(arr)
-    print("sparse vector get item", vector[0])
-    for i in range(size):
-        vector[i] = arr[i]
-    return vector
         
 if __name__ == "__main__":
     print("np operators", dir(np.ones((2,2))))
