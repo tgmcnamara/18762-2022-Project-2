@@ -1,5 +1,7 @@
 from __future__ import division
 from itertools import count
+import numpy as np
+from scipy.sparse import csc_matrix
 
 
 class Shunts:
@@ -37,7 +39,21 @@ class Shunts:
             Bstep (list): the admittance increase for each step in Nstep as MVar at unity voltage
         """
         self.id = self._ids.__next__()
+        self.G = G_MW/100 #MVA base
+        self.B = B_MVAR/100 #MVA base
+        self.Bus = Bus
+
 
         # You will need to implement the remainder of the __init__ function yourself.
         # You should also add some other class functions you deem necessary for stamping,
         # initializing, and processing results.
+        #
+
+    def stamp_lin(self, size, Vr, Vi):
+        G = self.G
+        B = self.B
+        row = np.array([Vr,Vr,Vi,Vi])
+        col = np.array([Vr,Vi,Vr,Vi])
+        dat = np.array([-G, B,-B,-G])
+        shuntlin = csc_matrix((dat, (row, col)), shape=(size,size))
+        return shuntlin
