@@ -49,27 +49,29 @@ class PowerFlow:
         self.solution_v = None
         
         # voltage limiting
-        self.absolute_v_limit = 2.5
+        self.v_max_limit = 2
+        self.v_min_limit = 0.0000000001
         self.delta_limit = 0.1
         
     def solve(self, Y, J, init_v):
         if (self.sparse == True):
-            print("Y", Y.todense())
-            print("J", J.todense())
-            print("v", init_v.todense())
+            Y.generate_matrix_from_sparse()
+            J.generate_matrix_from_sparse()
+            init_v.generate_matrix_from_sparse()
             
             v_new = init_v.sparse_matrix - sp.linalg.inv(Y.sparse_matrix) @  \
                     (Y.sparse_matrix @ init_v.sparse_matrix - J.sparse_matrix)
             # fit the matrix output of todense() to an 1-D array format
             v_new = np.array(v_new.todense()).ravel()
-            print("v new:", v_new,"size",v_new.shape)
+            #print("v new:", v_new,"size",v_new.shape)
             # need to fit the matrix output into an array format
             return sm.sparse_vector(arr = v_new)
         else:
             rounded_y = np.round(np.matrix(Y).tolist(),2)
             rounded_y = Y
-            print('\n'.join([''.join(['{:8}'.format(item) for item in row]) 
-                             for row in rounded_y]))
+            #print('\n'.join([''.join(['{:8}'.format(item) for item in row]) 
+            #                 for row in rounded_y]))
+            
             v_new = init_v - np.linalg.inv(Y) @ (Y @ init_v - J)
         # calculate information for determining residuals
             return v_new
@@ -79,39 +81,50 @@ class PowerFlow:
         # calculate delta v as well as its magnitude and sign
         delta_v = v_sol - prev_v_sol
         sign_delta_v = np.sign(delta_v)
-        norm_delta_v = np.sqrt(delta_v * delta_v)
+        norm_delta_v = np.abs(delta_v)
         # calculate the voltage limited value of  v
-        new_delta_v = (sign_delta * np.minimum(norm_delta_v,limit_vector)) + prev_v_sol
+        new_v = (sign_delta_v * np.minimum(norm_delta_v,limit_vector)) + prev_v_sol
         
         # perform absolute limits on all values
-        new_delta_v = np.maximum(new_delta_v, np.size(v_sol) * [self.absolute_v_limit] )
-        new_delta_v = np.minimum(new_delta_v, np.size(v_sol) * [self.absolute_v_limit] )
+        new_v = np.minimum(new_v, np.size(v_sol) * [self.v_max_limit] )
+        new_v = np.maximum(new_v, np.size(v_sol) * [self.v_min_limit] )
         
         # for all values that are NOT voltages replace new_delta_v values with v_sol values
         voltage_indices = {}
         # collect all the indices of v_sol that are voltages
         for device in voltage_devices:
-            voltage_devices[Buses.bus_map[device.Bus].node_Vr] = 1
-            voltage_devices[Buses.bus_map[device.Bus].node_Vi] = 1
+            voltage_indices[Buses.bus_map[device.Bus].node_Vr] = 1
+            voltage_indices[Buses.bus_map[device.Bus].node_Vi] = 1
         # subtract sets to find the indices that do not correspond to voltages
         voltage_indices = set(voltage_indices)
-        all_indices = set(np.arange(0,np.size(v_sol)+1,1))
+        all_indices = set(np.arange(0,np.size(v_sol),1))
         non_voltage_indices = all_indices.difference(voltage_indices)
+        #print("voltage indices", voltage_indices)
+        #print("all indices", all_indices)
+        #print("non voltage indices", non_voltage_indices)
+        
         # recover old values for the non_voltage indices
         for ind in non_voltage_indices:
-            new_delta_v[ind] = v_sol[ind]
+            new_v[ind] = v_sol[ind]
         
-        return new_delta_v    
+        print("new v", new_v)
+        
+        return new_v    
 
     def check_error(self, Y, J, v_sol):
         if (self.sparse == True):
-            print("Y", Y.todense())
-            print("J", J.todense())
-            print("v", v_sol.todense())            
+            Y.generate_matrix_from_sparse()
+            J.generate_matrix_from_sparse()
+            v_sol.generate_matrix_from_sparse()
+                      
             err_vector = (Y.sparse_matrix @ v_sol.sparse_matrix) - J.sparse_matrix
-            err_max = np.max(np.array(err_vector.todense()).ravel())
+            err_max = np.max(np.abs(np.array(err_vector.todense()).ravel()))
             return err_max
         else:
+            #print("Y",Y)
+            #print("v sol", v_sol)
+            #print("YV", Y @ v_sol)
+            #print("J", J)
             err_vector = (Y @ v_sol) - J
             err_max = np.max(err_vector)
             return err_max        
@@ -123,22 +136,24 @@ class PowerFlow:
         """
         pass
         
-    def stamp_linear(self, slack, branch):
+    def stamp_linear(self, slack, branch, transformer, shunt):
         for s in slack:
             self.Y, self.J = s.stamp(self.Y, self.J)
         for b in branch:
             self.Y, self.J = b.stamp(self.Y, self.J)
+        for t in transformer:
+            self.Y, self.J = t.stamp(self.Y, self.J)
+        for sh in shunt:
+            self.Y, self.J = sh.stamp(self.Y, self.J)
             
 
     def stamp_nonlinear(self, load, generator, prev_v):
         # loads
         for l in load:
             self.Y, self.J = l.stamp(self.Y, self.J, prev_v)
-        print("after load", self.J)
         # generators
         for g in generator:
             self.Y, self.J = g.stamp(self.Y, self.J, prev_v)
-        print("after generator", self.J)
     
     def reset_stamps(self, size):
         if (self.sparse):
@@ -196,7 +211,7 @@ class PowerFlow:
         # TODO: PART 1, STEP 2.1 - Complete the stamp_linear function which stamps all linear power grid elements.
         #  This function should call the stamp_linear function of each linear element and return an updated Y matrix.
         #  You need to decide the input arguments and return values.
-        self.stamp_linear(slack,branch)
+        self.stamp_linear(slack,branch,transformer,shunt)
         
         # linear stamps which can be used as the starting point in NR iterations
         linear_stamps = (self.Y, self.J)
@@ -218,9 +233,6 @@ class PowerFlow:
             print("NR iteration: {}".format(NR_count))
             self.Y, self.J = linear_stamps
             
-            # debugging
-            err_max = 0
-            
             # # # Stamp Nonlinear Power Grid Elements into Y matrix # # #
             # TODO: PART 1, STEP 2.4 - Complete the stamp_nonlinear function which stamps all nonlinear power grid
             #  elements. This function should call the stamp_nonlinear function of each nonlinear element and return
@@ -236,7 +248,7 @@ class PowerFlow:
 
             # # # Compute The Error at the current NR iteration # # #
             # TODO: PART 1, STEP 2.6 - Finish the check_error function which calculates the maximum error, err_max
-            #  You need to decide the input arguments and return values.
+            #  You need to decide the input arguments and return values
             err_max = self.check_error(self.Y, self.J, v_sol)
             print("max error at iteration:{}".format(err_max))
             #print("solution vector: {}".format(v_sol))
@@ -246,10 +258,14 @@ class PowerFlow:
             #  limiting. Also, complete the else condition. Do not complete this step until you've finished Part 1.
             #  You need to decide the input arguments and return values.
             if self.enable_limiting and err_max > tol:
-                self.apply_limiting(v_sol, prev_v_sol,[*generator,*slack,*load])
+                print("enable limiting")
+                v_sol = self.apply_limiting(v_sol, prev_v_sol, generator + slack + load)
             else:
-                pass
-
+                if (self.enable_limiting):
+                    v_sol = self.apply_limiting(v_sol, prev_v_sol, generator + slack + load)
+                    err_max = self.check_error(self.Y, self.J, v_sol)
+            
+            print("NR iteration", NR_count)
             prev_v_sol = v_sol            
             NR_count = NR_count + 1
 

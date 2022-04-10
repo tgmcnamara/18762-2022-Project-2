@@ -88,9 +88,6 @@ class Loads:
         v_node_i = Buses.bus_map[self.Bus].node_Vi
         
         # conductance and VCVS
-        print("prev_v", prev_v)
-        print("prev_v[0]", prev_v[0])
-        print("prev_v[v_node_r]", prev_v[v_node_r])
         Y[v_node_r][v_node_r] += self.dIrl_dVrl(prev_v[v_node_r],prev_v[v_node_i])
         Y[v_node_r][v_node_i] += self.dIrl_dVil(prev_v[v_node_r],prev_v[v_node_i])
         Y[v_node_i][v_node_r] += self.dIil_dVrl(prev_v[v_node_r],prev_v[v_node_i])

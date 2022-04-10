@@ -31,11 +31,17 @@ def process_results(v,bus):
                             1.05,1.036])
         gt_angs = np.array([0,-4.983,-12.725,-10.313,-8.774,-14.221,-13.360,-13.360,-14.939,
                             -15.097,-14.791,-15.076,-15.156,-16.034])
-    
+    elif (bus_size == 118):
+        mags = mags[:10]
+        angs = angs[:10]
+        gt_mags = np.array([0.955,0.971,0.968,0.998,1.002,0.990,0.989,1.015,1.043,1.050])
+        gt_angs = np.array([10.97,11.51,11.86,15.57,16.019,13.292,12.845,21.041,28.295,35.88])
+    else:
+        return -1
     print("mags:",mags,"gt mags:",gt_mags)    
-    mag_diff = np.average( ((mags - gt_mags) / gt_mags) * 100)
-    ang_diff = np.average( ((angs - gt_angs) / 360) * 100)
+    mag_diff = np.average( np.abs( ((mags - gt_mags) / gt_mags) * 100))
+    ang_diff = np.average( np.abs( ((angs - gt_angs) / 360) * 100))
     
     print("Bus magnitude (%) difference: {}".format(mag_diff))     
     print("Bus angle (%) difference: {}".format(ang_diff))   
-        
+    return 1    

@@ -59,7 +59,6 @@ class sparse_vector():
     def generate_matrix_from_sparse(self):
         for key in self.added_items.keys():
             self.set_element(key,self.added_items[key])
-        print("finished")
         self.sparse_matrix = csr_matrix((self.val, (self.row, np.array(np.size(self.row) * [0]))), 
                                         shape = (self.size,1))
         
@@ -106,9 +105,7 @@ class sparse_matrix():
     def generate_matrix_from_sparse(self):
         for key in self.added_items.keys():
             parsed = parse.parse("{},{}", key)
-            print("parsed",parsed[0],parsed[1])
             self.set_element(parsed[0],parsed[1],self.added_items["{},{}".format(parsed[0],parsed[1])])
-        print("finished")
         self.sparse_matrix = csr_matrix((self.val, (self.row, self.col)), 
                                         shape = (self.size, self.size))
         
