@@ -65,10 +65,15 @@ def solve(TESTCASE, SETTINGS):
     #  condition once you've finished building your solver.
     run_pf = True
     if run_pf:
-        v = powerflow.run_powerflow(v_init, bus, slack, generator, transformer, branch, shunt, load)
+        v, iterations = powerflow.run_powerflow(v_init, bus, slack, generator, transformer, branch, shunt, load)
 
+    print(
+        "\nThe number of iterations to converge to solution for this data was",
+        iterations,"iteration(s)."
+        )
+ 
     # # # Process Results # # #
     # TODO: PART 1, STEP 3 - Write a process_results function to compute the relevant results (voltages, powers,
     #  and anything else of interest) and find the voltage profile (maximum and minimum voltages in the case).
     #  You can decide which arguments to pass to this function yourself.
-    process_results()
+    process_results(bus, v)

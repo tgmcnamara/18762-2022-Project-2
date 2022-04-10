@@ -1,5 +1,3 @@
-
-from difflib import IS_CHARACTER_JUNK
 import numpy as np
 from models.Buses import Buses
 from models.Generators import Generators
@@ -107,25 +105,25 @@ class PowerFlow:
             vi_j = Buses.bus_key_[str(elem.to_bus) + "_vi"]
             ir_i = elem.node_Ir_i
             ii_i = elem.node_Ii_i
-            ir_j = elem.node_Ir_j
-            ii_j = elem.node_Ii_j
+            vr_2 = elem.node_Vr_2
+            vi_2 = elem.node_Vi_2
             y_stamps = [
-                [ir_i, vr_i, 1], [ir_i, vr_j, -elem.cos], [ir_i, vi_j, elem.sin],
+                [ir_i, vr_i, 1], [ir_i, vr_2, -elem.cos], [ir_i, vi_2, elem.sin],
                 [vr_i, ir_i, 1],
-                [ii_i, vi_i, 1], [ii_i, vr_j, -elem.sin], [ii_i, vi_j, -elem.cos],
+                [ii_i, vi_i, 1], [ii_i, vr_2, -elem.sin], [ii_i, vi_2, -elem.cos],
                 [vi_i, ii_i, 1],
-                [vr_j, ir_i, -elem.cos], [vr_i, ir_i, 1], [ir_i, vr_i, 1],
-                [vr_j, ii_i, -elem.sin], [vi_i, ii_i, 1], [ii_i, vi_i, 1],
-                [vi_j, ir_i, elem.sin], [vr_i, ir_i, 1], [ir_i, vr_i, 1],
-                [vi_j, ii_i, -elem.cos], [vi_i, ii_i, 1], [ii_i, vi_i, 1],
-                [vr_j, vr_j, elem.conductance], [vr_j, ir_j, -elem.conductance], [vr_j, ii_j, -elem.se_coeff],
+                [vr_2, ir_i, -elem.cos],
+                [vr_2, ii_i, -elem.sin],
+                [vi_2, ir_i, elem.sin],
+                [vi_2, ii_i, -elem.cos],
+                [vr_j, vr_j, elem.conductance], [vr_j, vr_2, -elem.conductance], [vr_j, vi_2, -elem.se_coeff],
                 [vr_j, vi_j, elem.se_coeff],
-                [ir_j, ir_j, elem.conductance], [ir_j, vr_j, -elem.conductance], [ir_j, ii_j, elem.se_coeff],
-                [ir_j, vi_j, -elem.se_coeff],
-                [vi_j, vi_j, elem.conductance], [vi_j, ii_j, -elem.conductance], [vi_j, vr_j, -elem.se_coeff],
-                [vi_j, ir_j, elem.se_coeff],
-                [ii_j, ii_j, elem.conductance], [ii_j, vi_j, -elem.conductance], [ii_j, ir_j, -elem.se_coeff],
-                [ii_j, vr_j, elem.se_coeff]
+                [vr_2, vr_2, elem.conductance], [vr_2, vr_j, -elem.conductance], [vr_2, vi_j, -elem.se_coeff],
+                [vr_2, vi_2, elem.se_coeff],
+                [vi_j, vi_j, elem.conductance], [vi_j, vi_2, -elem.conductance], [vi_j, vr_j, -elem.se_coeff],
+                [vi_j, vr_2, elem.se_coeff],
+                [vi_2, vi_2, elem.conductance], [vi_2, vi_j, -elem.conductance], [vi_2, vr_2, -elem.se_coeff],
+                [vi_2, vr_j, elem.se_coeff]
             ]
             for indicies in y_stamps:
                 i, j, value = indicies
@@ -133,7 +131,16 @@ class PowerFlow:
                 j_linear.append(j)
                 linear_value.append(value)
         for elem in shunts:
-            pass
+            vr = Buses.bus_key_[str(elem.bus) + "_vr"]
+            vi = Buses.bus_key_[str(elem.bus) + "_vi"]
+            y_stamps = [
+                [vr, vr, elem.g], [vi, vi, elem.g], [vr, vi, -elem.b], [vi, vr, elem.b]
+            ]
+            for indicies in y_stamps:
+                i, j, value = indicies
+                i_linear.append(i)
+                j_linear.append(j)
+                linear_value.append(value)
         y_matrix = sparse.coo_matrix((linear_value, (i_linear, j_linear)), shape = (size, size)).tocsr()
         j_vector = sparse.coo_matrix((j_value, (j_row, j_column)), shape = (size, 1)).tocsr()
         return y_matrix, j_vector
@@ -244,6 +251,8 @@ class PowerFlow:
         # TODO: PART 1, STEP 2.3 - Complete the NR While Loop
         while err_measure > tol:
 
+            NR_count += 1
+
             # # # Stamp Nonlinear Power Grid Elements into Y matrix # # #
             # TODO: PART 1, STEP 2.4 - Complete the stamp_nonlinear function which stamps all nonlinear power grid
             #  elements. This function should call the stamp_nonlinear function of each nonlinear element and return
@@ -276,5 +285,4 @@ class PowerFlow:
             #  You need to decide the input arguments and return values.
             if self.enable_limiting and err_measure > tol:
                 self.apply_limiting()
-        print(v)
-        return v
+        return v, NR_count

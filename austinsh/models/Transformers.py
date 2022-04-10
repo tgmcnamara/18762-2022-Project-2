@@ -55,5 +55,5 @@ class Transformers:
         """
         self.node_Ir_i = Buses._node_index.__next__()
         self.node_Ii_i = Buses._node_index.__next__()
-        self.node_Ir_j = Buses._node_index.__next__()
-        self.node_Ii_j = Buses._node_index.__next__()
+        self.node_Vr_2 = Buses._node_index.__next__()
+        self.node_Vi_2 = Buses._node_index.__next__()

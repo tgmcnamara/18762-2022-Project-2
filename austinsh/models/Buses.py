@@ -67,3 +67,9 @@ class Buses:
             self.bus_key_[str(self.Bus) + "_vr"] = self.node_Vr
             self.bus_key_[str(self.Bus) + "_vi"] = self.node_Vi
             self.bus_key_[str(self.Bus) + "_q"] = self.node_Q
+
+    def final_bus_properties(self, v_solution):
+        self.vr = v_solution[self.node_Vr]
+        self.vi = v_solution[self.node_Vi]
+        self.mag_v = (self.vr**2 + self.vi**2)**(1/2)
+        self.ang_deg = 180/np.pi * np.arctan(self.vi / self.vr)
