@@ -54,9 +54,9 @@ class PowerFlow:
         
     def solve(self, Y, J, init_v):
         if (self.sparse == True):
-            print("Y", Y.to_dense())
-            print("J", J.to_dense())
-            print("v", init_v.to_dense())
+            print("Y", Y.todense())
+            print("J", J.todense())
+            print("v", init_v.todense())
             
             v_new = init_v.sparse_matrix - sp.linalg.inv(Y.sparse_matrix) @  \
                     (Y.sparse_matrix @ init_v.sparse_matrix - J.sparse_matrix)
@@ -105,9 +105,9 @@ class PowerFlow:
 
     def check_error(self, Y, J, v_sol):
         if (self.sparse == True):
-            print("Y", Y.to_dense())
-            print("J", J.to_dense())
-            print("v", v_sol.to_dense())            
+            print("Y", Y.todense())
+            print("J", J.todense())
+            print("v", v_sol.todense())            
             err_vector = (Y.sparse_matrix @ v_sol.sparse_matrix) - J.sparse_matrix
             err_max = np.max(np.array(err_vector.todense()).ravel())
             return err_max

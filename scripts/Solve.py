@@ -75,6 +75,8 @@ def solve(TESTCASE, SETTINGS):
     for sh in shunt:
         print("sh:{}\n{}".format(sh,vars(sh)))
 
+
+    start_time = time.time()
     # # # Initialize Solution Vector - V and Q values # # #
     # determine the size of the Y matrix by looking at the total number of nodes in the system
     size_Y = Buses._node_index.__next__()
@@ -93,9 +95,11 @@ def solve(TESTCASE, SETTINGS):
     #  condition once you've finished building your solver.
     v = powerflow.run_powerflow(v_init, bus, slack, generator, transformer, branch, shunt, load)
 
+    end_time = time.time()
     # # # Process Results # # #
     # TODO: PART 1, STEP 3 - Write a process_results function to compute the relevant results (voltages, powers,
     #  and anything else of interest) and find the voltage profile (maximum and minimum voltages in the case).
     #  You can decide which arguments to pass to this function yourself.
     process_results(v,bus)
+    print("total time elapsed: ", end_time - start_time)
     

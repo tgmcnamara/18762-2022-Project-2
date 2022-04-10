@@ -44,13 +44,13 @@ class sparse_vector():
         return self.added_items[idx]
         
     def set_element(self, i, val):
+        if (self.index >= np.size(self.row) - 1):
+            self.widen_vectors(2)
+            
         self.row[self.index] = i
         self.val[self.index] = val
         self.added_items[i] = val
         self.index = self.index + 1
-        
-        if (self.index >= self.size):
-            self.widen_vectors(1)
         
     def widen_vectors(self, amount):
         self.row = np.hstack((self.row, amount * [0]))
@@ -63,7 +63,7 @@ class sparse_vector():
         self.sparse_matrix = csr_matrix((self.val, (self.row, np.array(np.size(self.row) * [0]))), 
                                         shape = (self.size,1))
         
-    def to_dense(self):
+    def todense(self):
         self.generate_matrix_from_sparse()
         if (self.sparse_matrix == None):
             return np.zeros((size, size))
@@ -89,14 +89,14 @@ class sparse_matrix():
         return self.sparse_matrix
         
     def set_element(self, i, j, val):
+        if (self.index >= np.size(self.row) - 1):
+            self.widen_vectors(2)
+            
         self.row[self.index] = i
         self.col[self.index] = j
         self.val[self.index] = val
         self.added_items["{},{}".format(i,j)] = val
         self.index = self.index + 1
-        
-        if (self.index >= self.size):
-            self.widen_vectors(1)
         
     def widen_vectors(self, amount):
         self.row = np.hstack((self.row, amount * [0]))
@@ -112,7 +112,7 @@ class sparse_matrix():
         self.sparse_matrix = csr_matrix((self.val, (self.row, self.col)), 
                                         shape = (self.size, self.size))
         
-    def to_dense(self):
+    def todense(self):
         self.generate_matrix_from_sparse()
         if (self.sparse_matrix == None):
             return np.zeros((size, size))
