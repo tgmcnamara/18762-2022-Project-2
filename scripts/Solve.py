@@ -54,6 +54,7 @@ def solve(TESTCASE, SETTINGS):
     print("transformer:{}\nbranch:{}\nshunt:{}\nload:{}".format(transformer,branch,shunt,load))
     time.sleep(10)
     
+    # printing the class variables for all the important components
     for g in generator:
         print("g:{}\n{}".format(g,vars(g)))
 
@@ -93,7 +94,7 @@ def solve(TESTCASE, SETTINGS):
     # TODO: PART 1, STEP 2 - Complete the PowerFlow class and build your run_powerflow function to solve Equivalent
     #  Circuit Formulation powerflow. The function will return a final solution vector v. Remove run_pf and the if
     #  condition once you've finished building your solver.
-    v = powerflow.run_powerflow(v_init, bus, slack, generator, transformer, branch, shunt, load)
+    v, nr_count = powerflow.run_powerflow(v_init, bus, slack, generator, transformer, branch, shunt, load)
 
     end_time = time.time()
     # # # Process Results # # #
@@ -102,4 +103,4 @@ def solve(TESTCASE, SETTINGS):
     #  You can decide which arguments to pass to this function yourself.
     process_results(v,bus)
     print("total time elapsed: ", end_time - start_time)
-    
+    print("NR iterations:", nr_count)

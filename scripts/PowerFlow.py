@@ -58,25 +58,27 @@ class PowerFlow:
             Y.generate_matrix_from_sparse()
             J.generate_matrix_from_sparse()
             init_v.generate_matrix_from_sparse()
-            
+            # NR step
             v_new = init_v.sparse_matrix - sp.linalg.inv(Y.sparse_matrix) @  \
                     (Y.sparse_matrix @ init_v.sparse_matrix - J.sparse_matrix)
             # fit the matrix output of todense() to an 1-D array format
             v_new = np.array(v_new.todense()).ravel()
-            #print("v new:", v_new,"size",v_new.shape)
-            # need to fit the matrix output into an array format
+            
             return sm.sparse_vector(arr = v_new)
         else:
             rounded_y = np.round(np.matrix(Y).tolist(),2)
             rounded_y = Y
-            #print('\n'.join([''.join(['{:8}'.format(item) for item in row]) 
-            #                 for row in rounded_y]))
             
             v_new = init_v - np.linalg.inv(Y) @ (Y @ init_v - J)
         # calculate information for determining residuals
             return v_new
 
     def apply_limiting(self, v_sol, prev_v_sol, voltage_devices):
+        if (self.sparse):
+            v_sol = np.array(v_sol.todense()).ravel()
+            prev_v_sol = np.array(prev_v_sol.todense()).ravel()
+            print("vsol:{} pre_v_sol:{}".format(v_sol, prev_v_sol))
+        
         limit_vector = np.array(np.size(v_sol) * [self.delta_limit])
         # calculate delta v as well as its magnitude and sign
         delta_v = v_sol - prev_v_sol
@@ -109,7 +111,10 @@ class PowerFlow:
         
         print("new v", new_v)
         
-        return new_v    
+        if (self.sparse):
+            return sm.sparse_vector(arr =new_v)
+        else:
+            return new_v
 
     def check_error(self, Y, J, v_sol):
         if (self.sparse == True):
@@ -269,4 +274,4 @@ class PowerFlow:
             prev_v_sol = v_sol            
             NR_count = NR_count + 1
 
-        return v_sol
+        return v_sol, NR_count

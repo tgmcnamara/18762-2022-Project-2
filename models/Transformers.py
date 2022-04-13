@@ -55,12 +55,45 @@ class Transformers:
         return Y, J
     
     def stamp(self, Y, J):
-        # diagonal stamp blocks
+        """
         Y, J = self.diagonal_stamp(Y,J,Buses.bus_map[self.from_bus].node_Vr,
                                    Buses.bus_map[self.to_bus].node_Vr) 
         
         Y, J = self.diagonal_stamp(Y,J,Buses.bus_map[self.from_bus].node_Vi,
                                    Buses.bus_map[self.to_bus].node_Vi)
+        """
+        # diagonal stamp blocks
+        kr = Buses.bus_map[self.from_bus].node_Vr
+        ki = Buses.bus_map[self.from_bus].node_Vi
+        mr = Buses.bus_map[self.to_bus].node_Vr
+        mi = Buses.bus_map[self.to_bus].node_Vi
+        
+        c = 1/(self.r**2+self.x**2) # constant which appears in each term
+        
+        # terms are coming from I_km,r equation
+        Y[kr][kr] += c*self.r*self.tr**2
+        Y[kr][ki] += c*self.x*self.tr**2
+        Y[kr][mr] += -c*self.tr*self.r
+        Y[kr][mi] += -c*self.tr*self.x
+        # terms are coming I_km,i equation
+        Y[ki][ki] += c*self.r*self.tr**2
+        Y[ki][kr] += -c*self.x*self.tr**2
+        Y[ki][mr] += c*self.tr*self.x
+        Y[kr][mi] += -c*self.tr*self.r   
+        
+        # terms are coming from I_mk,r equation
+        Y[mr][kr] += c*self.tr*self.r
+        Y[mr][ki] += c*self.tr*self.x
+        Y[mr][mr] += c*self.r
+        Y[mr][mi] += c*self.x
+        
+        # terms are coming from I_mk,i equation
+        Y[mi][kr] += -c*self.tr*self.x
+        Y[mi][ki] += c*self.tr*self.r
+        Y[mi][mr] += -c*self.x
+        Y[mi][mi] += c*self.r 
+       
+        
         return Y,J    
         
         

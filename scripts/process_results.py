@@ -23,25 +23,48 @@ def process_results(v,bus):
         print("{}".format(b.Bus) +"        {:.5f}    {:.5f}".format(mag,ang))
         
         
+    comparison_results = False
+    
     if (bus_size == 4):
         gt_mags = np.array([1,0.982,0.969,1.020])
         gt_angs = np.array([0,-0.976,-1.872,1.523])
+        comparison_results = True
     elif (bus_size == 14):
         gt_mags = np.array([1.06,1.045,1.01,1.018,1.02,1.07,1.062,1.09,1.056,1.051,1.057,1.055,
                             1.05,1.036])
         gt_angs = np.array([0,-4.983,-12.725,-10.313,-8.774,-14.221,-13.360,-13.360,-14.939,
                             -15.097,-14.791,-15.076,-15.156,-16.034])
+        comparison_results = True
     elif (bus_size == 118):
         mags = mags[:10]
         angs = angs[:10]
         gt_mags = np.array([0.955,0.971,0.968,0.998,1.002,0.990,0.989,1.015,1.043,1.050])
         gt_angs = np.array([10.97,11.51,11.86,15.57,16.019,13.292,12.845,21.041,28.295,35.88])
+        comparison_results = True
     else:
-        return -1
-    print("mags:",mags,"gt mags:",gt_mags)    
-    mag_diff = np.average( np.abs( ((mags - gt_mags) / gt_mags) * 100))
-    ang_diff = np.average( np.abs( ((angs - gt_angs) / 360) * 100))
+        print("ground truth comparison data is not entered for this result")
     
-    print("Bus magnitude (%) difference: {}".format(mag_diff))     
-    print("Bus angle (%) difference: {}".format(ang_diff))   
+    if (comparison_results):
+        print("mags:",mags,"gt mags:",gt_mags)    
+        mag_diff = np.average( np.abs( ((mags - gt_mags) / gt_mags) * 100))
+        ang_diff = np.average( np.abs( ((angs - gt_angs) / 360) * 100))
+        
+        print("Bus magnitude (%) difference: {}".format(mag_diff))     
+        print("Bus angle (%) difference: {}".format(ang_diff))  
+    
+    max_mag = max(mags)
+    max_mag_ind = list(mags).index(max_mag) + 1
+    min_mag = min(mags)
+    min_mag_ind = list(mags).index(min_mag) + 1
+    print("max Bus magnitude:{} at Bus:{}".format(max_mag, max_mag_ind))
+    print("min Bus magnitude:{} at Bus:{}".format(min_mag, min_mag_ind))
+
+    max_ang = max(angs)
+    max_ang_ind = list(angs).index(max_ang) + 1
+    min_ang = min(angs)
+    min_ang_ind = list(angs).index(min_ang) + 1
+    print("max Bus angle:{} at Bus:{}".format(max_ang, max_ang_ind))
+    print("min Bus angle:{} at Bus:{}".format(min_ang, min_ang_ind))
+
+    
     return 1    
