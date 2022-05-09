@@ -35,6 +35,7 @@ def solve(TESTCASE, SETTINGS):
     tol = SETTINGS['Tolerance']  # NR solver tolerance
     max_iters = SETTINGS['Max Iters']  # maximum NR iterations
     enable_limiting = SETTINGS['Limiting']  # enable/disable voltage and reactive power limiting
+    optimization = SETTINGS['Optimization']
 
     # # # Assign System Nodes Bus by Bus # # #
     # We can use these nodes to have predetermined node number for every node in our Y matrix and J vector.
@@ -49,16 +50,27 @@ def solve(TESTCASE, SETTINGS):
     for ele in transformer:
         ele.assign_nodes()
 
+    if optimization:
+        for ele in bus:
+            ele.infeasible_nodes()
+            ele.optimization_nodes()
+        
+        for ele in slack:
+            ele.optimization_nodes()
+
+        for ele in transformer:
+            ele.optimization_nodes()
+    
     # # # Initialize Solution Vector - V and Q values # # #
 
     # Determine the size of the Y matrix by looking at the total number of nodes in the system
     size_Y = Buses._node_index.__next__()
 
     v_init = np.zeros(size_Y)
-    v_init = initialize(v_init, bus, generator, slack, load)
+    v_init = initialize(v_init, bus, generator, slack, load, transformer, optimization)
 
     # # # Run Power Flow # # #
-    powerflow = PowerFlow(case_name, tol, max_iters, enable_limiting)
+    powerflow = PowerFlow(case_name, tol, max_iters, enable_limiting, optimization)
 
     # TODO: PART 1, STEP 2 - Complete the PowerFlow class and build your run_powerflow function to solve Equivalent
     #  Circuit Formulation powerflow. The function will return a final solution vector v. Remove run_pf and the if

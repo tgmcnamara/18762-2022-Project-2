@@ -73,3 +73,27 @@ class Buses:
         self.vi = v_solution[self.node_Vi]
         self.mag_v = (self.vr**2 + self.vi**2)**(1/2)
         self.ang_deg = 180/np.pi * np.arctan(self.vi / self.vr)
+    
+    def infeasible_nodes(self):
+        self.node_infeasible_r = self._node_index.__next__()
+        self.node_infeasible_i = self._node_index.__next__()
+        self.bus_key_[str(self.Bus) + "_infeasible_r"] = self.node_infeasible_r
+        self.bus_key_[str(self.Bus) + "_infeasible_i"] = self.node_infeasible_i
+
+    def optimization_nodes(self):
+
+        # If PQ (loads) or Slack Bus
+        if self.Type == 1 or self.Type == 3:
+            self.node_lambda_r = self._node_index.__next__()
+            self.node_lambda_i = self._node_index.__next__()
+            self.bus_key_[str(self.Bus) + "_lambda_r"] = self.node_lambda_r
+            self.bus_key_[str(self.Bus) + "_lambda_i"] = self.node_lambda_i
+
+        # If PV Bus
+        elif self.Type == 2:
+            self.node_lambda_r = self._node_index.__next__()
+            self.node_lambda_i = self._node_index.__next__()
+            self.node_lambda_q = self._node_index.__next__()
+            self.bus_key_[str(self.Bus) + "_lambda_r"] = self.node_lambda_r
+            self.bus_key_[str(self.Bus) + "_lambda_i"] = self.node_lambda_i
+            self.bus_key_[str(self.Bus) + "_lambda_q"] = self.node_lambda_q

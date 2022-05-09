@@ -57,3 +57,9 @@ class Transformers:
         self.node_Ii_i = Buses._node_index.__next__()
         self.node_Vr_2 = Buses._node_index.__next__()
         self.node_Vi_2 = Buses._node_index.__next__()
+    
+    def optimization_nodes(self):
+        self.node_LR_IR = Buses._node_index.__next__()
+        self.node_LI_II = Buses._node_index.__next__()
+        self.node_LR_2 = Buses._node_index.__next__()
+        self.node_LI_2 = Buses._node_index.__next__()

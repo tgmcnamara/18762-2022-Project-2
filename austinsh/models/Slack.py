@@ -37,3 +37,7 @@ class Slack:
         """
         self.node_Ir_Slack = Buses._node_index.__next__()
         self.node_Ii_Slack = Buses._node_index.__next__()
+
+    def optimization_nodes(self):
+        self.node_lambdar_ir = Buses._node_index.__next__()
+        self.node_lambdai_ii = Buses._node_index.__next__()

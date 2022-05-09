@@ -65,10 +65,10 @@ class Generators:
         imag_I_by_q = real_V / (real_V**2 + imag_V**2)
         imag_I_by_real_V = real_I_by_imag_V
         imag_I_by_imag_V = -real_I_by_real_V
-        real_V_by_q = 2*real_V
-        imag_V_by_q = 2*imag_V
+        q_by_real_V = 2*real_V
+        q_by_imag_V = 2*imag_V
         return real_I_by_q, real_I_by_real_V, real_I_by_imag_V, imag_I_by_q, imag_I_by_real_V, \
-                imag_I_by_imag_V, real_V_by_q, imag_V_by_q
+                imag_I_by_imag_V, q_by_real_V, q_by_imag_V
 
     def pv_history(self, PreviousSolution, IR_by_Q, IR_by_VR, IR_by_VI, II_by_Q, II_by_VR, II_by_VI):
         real_V = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
@@ -79,4 +79,49 @@ class Generators:
         j_real_stamp = - (real_I - IR_by_Q * q_gen - IR_by_VR * real_V - IR_by_VI * imag_V)
         j_imag_stamp = - (imag_I - II_by_Q * q_gen - II_by_VR * real_V - II_by_VI * imag_V)
         j_q_stamp = self.vset**2 + real_V**2 + imag_V**2
+        return j_real_stamp, j_imag_stamp, j_q_stamp
+
+    def optimize_derivative(self, PreviousSolution):
+        LR = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_r"]]
+        LI = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_i"]]
+        VR = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
+        VI = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
+        LQ = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_q"]]
+        Q = PreviousSolution[Buses.bus_key_[str(self.bus) + "_q"]]
+        real_A_by_real_V = ((2*VR*(LI*Q - LR*self.p)*(VR**2 - 3*VI**2) +
+                            2*VI*(LR*Q + LI*self.p)*(VI**2 - 3*VR**2)) /
+                            (VR**2 + VI**2)**3) + 2*LQ
+        real_A_by_imag_V = ((2*VI*(self.p*LR - Q*LI)*(VI**2 - 3*VR**2) +
+                            2*VR*(Q*LR + self.p*LI)*(VR**2 - 3*VI**2)) /
+                            (VR**2 + VI**2)**3)
+        real_A_by_Q = (LR*2*VR*VI + LI*(VI**2 - VR**2)) / (VR**2 + VI**2)**2
+        imag_A_by_real_V = ((2*VR*(LR*Q + LI*self.p)*(VR**2 - 3*VI**2) +
+                            2*VI*(LR*self.p - LI*Q)*(VI**2 - 3*VR**2)) /
+                            (VR**2 + VI**2)**3)
+        imag_A_by_imag_V = ((2*VI*(-self.p*LI - Q*LR)*(VI**2 - 3*VR**2) +
+                            2*VR*(-Q*LI + self.p*LR)*(VR**2 - 3*VI**2)) /
+                            (VR**2 + VI**2)**3) + 2*LQ
+        imag_A_by_Q = (LR*(VI**2 - VR**2) - 2*LI*VR*VI) / (VR**2 + VI**2)**2
+        AQ_by_real_V = real_A_by_Q
+        AQ_by_imag_V = imag_A_by_Q
+        return real_A_by_real_V, real_A_by_imag_V, real_A_by_Q, imag_A_by_real_V, \
+            imag_A_by_imag_V, imag_A_by_Q, AQ_by_real_V, AQ_by_imag_V
+
+    def optimize_history(self, PreviousSolution, IR_by_VR, IR_by_VI, II_by_VR, II_by_VI,
+                        IR_by_Q, Q_by_VR, Q_by_VI, II_by_Q, AR_by_VR, AR_by_VI, AI_by_VR, 
+                        AI_by_VI, AR_by_Q, AI_by_Q, AQ_by_VR, AQ_by_VI):
+        LR = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_r"]]
+        LI = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_i"]]
+        LQ = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_q"]]
+        VR = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
+        VI = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
+        Q = PreviousSolution[Buses.bus_key_[str(self.bus) + "_q"]]
+        real_A = LR*IR_by_VR + LI*II_by_VR + LQ*Q_by_VR
+        imag_A = LR*IR_by_VI + LI*II_by_VI + LQ*Q_by_VI
+        AQ = LR*IR_by_Q + LI*II_by_Q
+        j_real_stamp = - (real_A - AR_by_VR*VR - AR_by_VI*VI - AR_by_Q*Q - IR_by_VR*LR - 
+                        II_by_VR*LI - Q_by_VR*LQ)
+        j_imag_stamp = - (imag_A - AI_by_VR*VR - AI_by_VI*VI - AI_by_Q*Q - IR_by_VI*LR -
+                        II_by_VI*LI - Q_by_VI*LQ)
+        j_q_stamp = - (AQ - AQ_by_VR*VR - AQ_by_VI*VI - IR_by_Q*LR - II_by_Q*LI)
         return j_real_stamp, j_imag_stamp, j_q_stamp

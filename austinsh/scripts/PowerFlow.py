@@ -2,6 +2,7 @@ import numpy as np
 from models.Buses import Buses
 from models.Generators import Generators
 from models.Loads import Loads
+from scripts import optimization
 from scipy import sparse
 from scipy.sparse.linalg import spsolve
 
@@ -11,7 +12,8 @@ class PowerFlow:
                  case_name,
                  tol,
                  max_iters,
-                 enable_limiting):
+                 enable_limiting,
+                 optimization):
         """Initialize the PowerFlow instance.
 
         Args:
@@ -28,13 +30,27 @@ class PowerFlow:
         self.tol = tol
         self.max_iters = max_iters
         self.enable_limiting = enable_limiting
+        self.optimization = optimization
 
     def solve(self, y_matrix, j_matrix):
         v = spsolve(y_matrix, j_matrix)
         return v
 
-    def apply_limiting(self):
-        pass
+    def apply_limiting(self, bus, v, diff):
+        for elem in bus:
+            vr_index = elem.node_Vr
+            vi_index = elem.node_Vi
+            vr_diff = diff[vr_index]
+            vi_diff = diff[vi_index]
+            if abs(vr_diff) > .1:
+                vr = v[vr_index] - vr_diff
+                vr = vr + np.sign(vr_diff)*.1
+                v[vr_index] = vr
+            if abs(vi_diff) > .1:
+                vi = v[vi_index] - vi_diff
+                vi = vi + np.sign(vi_diff)*.1
+                v[vi_index] = vi
+        return v
 
     def check_error(self, difference):
         """Returns the number of variables outside their accepted tolerance."""
@@ -134,7 +150,8 @@ class PowerFlow:
             vr = Buses.bus_key_[str(elem.bus) + "_vr"]
             vi = Buses.bus_key_[str(elem.bus) + "_vi"]
             y_stamps = [
-                [vr, vr, elem.g], [vi, vi, elem.g], [vr, vi, -elem.b], [vi, vr, elem.b]
+                [vr, vr, elem.g], [vr, vi, -elem.b],
+                [vi, vr, elem.b], [vi, vi, elem.g]
             ]
             for indicies in y_stamps:
                 i, j, value = indicies
@@ -249,7 +266,7 @@ class PowerFlow:
 
         # # # Begin Solving Via NR # # #
         # TODO: PART 1, STEP 2.3 - Complete the NR While Loop
-        while err_measure > tol:
+        while err_measure > tol and NR_count <self.max_iters:
 
             NR_count += 1
 
@@ -261,6 +278,18 @@ class PowerFlow:
             state_variables = len(v)
             y_n_sparse, j_n_sparse = self.stamp_nonlinear(generator, load, v)
             y_l_sparse, j_l_sparse = self.stamp_linear(branch, slack, transformer, shunt, state_variables)
+            
+            if self.optimization:
+                y_ol_sparse, j_ol_sparse = optimization.optimize_linear(
+                    bus, branch, slack, transformer, shunt, state_variables
+                )
+                y_on_sparse, j_on_sparse = optimization.optimize_nonlinear(
+                    generator, load, v, state_variables
+                )
+                y_l_sparse = y_l_sparse + y_ol_sparse
+                y_n_sparse = y_n_sparse + y_on_sparse
+                j_l_sparse = j_l_sparse + j_ol_sparse
+                j_n_sparse = j_n_sparse + j_on_sparse
 
             y_matrix = y_n_sparse + y_l_sparse
             j_vector = j_n_sparse + j_l_sparse
@@ -269,12 +298,14 @@ class PowerFlow:
             # TODO: PART 1, STEP 2.5 - Complete the solve function which solves system of equations Yv = J. The
             #  function should return a new v_sol.
             #  You need to decide the input arguments and return values.
+            
             v_new = self.solve(y_matrix, j_vector)
 
             # # # Compute The Error at the current NR iteration # # #
             # TODO: PART 1, STEP 2.6 - Finish the check_error function which calculates the maximum error, err_max
             #  You need to decide the input arguments and return values.
 
+            vector_diff = v_new - v
             iteration_difference = abs(v_new - v)
             err_measure = self.check_error(iteration_difference)
             v = v_new
@@ -284,5 +315,9 @@ class PowerFlow:
             #  limiting. Also, complete the else condition. Do not complete this step until you've finished Part 1.
             #  You need to decide the input arguments and return values.
             if self.enable_limiting and err_measure > tol:
-                self.apply_limiting()
+                v = self.apply_limiting(bus, v, vector_diff)
+            
+        if NR_count == self.max_iters:
+            print("\nNewton Raphson failed to converge in", NR_count,"steps.")
+            input()
         return v, NR_count

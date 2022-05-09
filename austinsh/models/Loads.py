@@ -1,8 +1,6 @@
 from __future__ import division
 from itertools import count
 from models.Buses import Buses
-from numpy import array_equal
-
 
 class Loads:
     _ids = count(0)
@@ -55,4 +53,35 @@ class Loads:
         imag_I = (self.p * imag_V - self.q * real_V) / (real_V**2 + imag_V**2)
         j_real_stamp = - (real_I - IR_by_VR * real_V - IR_by_VI * imag_V)
         j_imag_stamp = - (imag_I - II_by_VR * real_V - II_by_VI * imag_V)
+        return j_real_stamp, j_imag_stamp
+
+    def optimize_derivative(self, PreviousSolution):
+        LR = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_r"]]
+        LI = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_i"]]
+        VR = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
+        VI = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
+        real_A_by_real_V = ((2*VR*(LR*self.p - LI*self.q)*(VR**2 - 3*VI**2) -
+                            2*VI*(LR*self.q + LI*self.p)*(VI**2 - 3*VR**2)) /
+                            (VR**2 + VI**2)**3)
+        real_A_by_imag_V = ((2*VI*(self.q*LI - self.p*LR)*(VI**2 - 3*VR**2) -
+                            2*VR*(self.q*LR + self.p*LI)*(VR**2 - 3*VI**2)) /
+                            (VR**2 + VI**2)**3)
+        imag_A_by_real_V = ((-2*VR*(LR*self.q + LI*self.p)*(VR**2 - 3*VI**2) +
+                            2*VI*(LI*self.q - LR*self.p)*(VI**2 - 3*VR**2)) /
+                            (VR**2 + VI**2)**3)
+        imag_A_by_imag_V = ((2*VI*(self.p*LI + self.q*LR)*(VI**2 - 3*VR**2) +
+                            2*VR*(self.q*LI - self.p*LR)*(VR**2 - 3*VI**2)) /
+                            (VR**2 + VI**2)**3)
+        return real_A_by_real_V, real_A_by_imag_V, imag_A_by_real_V, imag_A_by_imag_V
+
+    def optimize_history(self, PreviousSolution, IR_by_VR, IR_by_VI, II_by_VR, II_by_VI,
+                        AR_by_VR, AR_by_VI, AI_by_VR, AI_by_VI):
+        LR = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_r"]]
+        LI = PreviousSolution[Buses.bus_key_[str(self.bus) + "_lambda_i"]]
+        VR = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vr"]]
+        VI = PreviousSolution[Buses.bus_key_[str(self.bus) + "_vi"]]
+        real_A = LR*IR_by_VR + LI*II_by_VR
+        imag_A = LR*IR_by_VI + LI*II_by_VI
+        j_real_stamp = - (real_A - AR_by_VR * VR - AR_by_VI * VI - IR_by_VR * LR - II_by_VR * LI)
+        j_imag_stamp = - (imag_A - AI_by_VR * VR - AI_by_VI * VI - IR_by_VI * LR - II_by_VI * LI)
         return j_real_stamp, j_imag_stamp
